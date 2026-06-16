@@ -1,0 +1,24 @@
+{
+  "shift_templates": {
+    "morning": {"start": "08:00", "end": "16:00", "break_duration": 30},
+    "afternoon": {"start": "14:00", "end": "22:00", "break_duration": 30},
+    "evening": {"start": "22:00", "end": "06:00", "break_duration": 45},
+    "standard": {"start": "09:00", "end": "17:00", "break_duration": 30}
+  },
+  "adherence_thresholds": {
+    "late_minutes": 5,
+    "early_departure_minutes": 5,
+    "extended_break_minutes": 10,
+    "max_breaks_per_day": 2
+  },
+  "grace_periods": {
+    "login_grace": 5,
+    "break_grace": 2,
+    "lunch_grace": 5
+  },
+  "overtime_rules": {
+    "daily_overtime_threshold": 8,
+    "weekly_overtime_threshold": 40,
+    "require_approval": true
+  }
+}

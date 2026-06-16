@@ -1,0 +1,65 @@
+# Secrets / environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+*.egg-info/
+
+# Bundled third-party binaries (fetch at deploy time instead)
+ffmpeg/
+
+# ML model weights (downloaded automatically by whisper at runtime)
+models/
+*.pt
+*.bin
+*.onnx
+
+# Stray backup files
+*.backup
+*.bak
+
+# Local data, exports, logs, temp
+data/
+exports/
+logs/
+temp/
+recordings/
+*.log
+
+# Media / recordings / large binaries (should never be in git)
+*.mp3
+*.mp3.mpeg
+*.wav
+*.mp4
+*.dat
+
+# Loose docs/screenshots/exports dumped in project root (not app code)
+*.pdf
+*.docx
+*.xlsx
+*.png
+*.jpg
+*.jpeg
+*.txt
+!requirements.txt
+
+# Backup/scratch copies
+*main - Copy*.py
+*main_updated.py
+~$*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Batch/installer scripts with local machine paths (keep if you want, excluded by default)
+*.bat
+*.ps1

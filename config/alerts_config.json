@@ -1,0 +1,43 @@
+{
+  "thresholds": {
+    "agent_pause_time": 15,
+    "queue_abandon_rate": 15,
+    "service_level": 80,
+    "call_volume_spike": 50,
+    "agent_idle_time": 30,
+    "campaign_health": 60
+  },
+  "notification": {
+    "email_enabled": false,
+    "email_recipients": [],
+    "slack_enabled": false,
+    "slack_webhook": "",
+    "dashboard_alerts": true
+  },
+  "alert_history": [
+    {
+      "type": "queue_waiting",
+      "severity": "info",
+      "message": "Campaign TodosGamersCS: 2 calls waiting",
+      "explanation": "There are currently 2 callers waiting",
+      "data": {
+        "campaign_id": "TodosGamersCS",
+        "waiting": 2
+      },
+      "timestamp": "2026-06-16T05:36:03.955512",
+      "acknowledged": false
+    },
+    {
+      "type": "queue_waiting",
+      "severity": "info",
+      "message": "Campaign UpliftDeals: 1 calls waiting",
+      "explanation": "There is currently 1 caller waiting",
+      "data": {
+        "campaign_id": "UpliftDeals",
+        "waiting": 1
+      },
+      "timestamp": "2026-06-16T05:36:03.962513",
+      "acknowledged": false
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "Xshield": {
+    "start": "22:00",
+    "end": "18:00",
+    "timezone": "EST",
+    "crosses_midnight": true
+  },
+  "XCHANGE": {
+    "start": "09:00",
+    "end": "19:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "TodosGamersCS": {
+    "start": "08:00",
+    "end": "20:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "UpliftDeals": {
+    "start": "09:00",
+    "end": "21:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "SAVVYCS": {
+    "start": "08:00",
+    "end": "20:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "K1": {
+    "start": "09:00",
+    "end": "17:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "Zappify": {
+    "start": "08:00",
+    "end": "22:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "YPDirect": {
+    "start": "09:00",
+    "end": "18:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  },
+  "DignityBioLabs": {
+    "start": "09:00",
+    "end": "17:00",
+    "timezone": "EST",
+    "crosses_midnight": false
+  }
+}

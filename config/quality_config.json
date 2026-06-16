@@ -1,0 +1,30 @@
+{
+  "weights": {
+    "hold_time": 0.15,
+    "call_duration": 0.20,
+    "resolution_rate": 0.25,
+    "repeat_calls": 0.30,
+    "transfers": 0.10
+  },
+  "ranges": {
+    "ideal_call_min": 120,
+    "ideal_call_max": 600,
+    "hold_time_max": 30,
+    "repeat_window_hours": 24
+  },
+  "quality_tiers": {
+    "excellent": 90,
+    "good": 80,
+    "average": 70,
+    "needs_work": 60,
+    "poor": 0
+  },
+  "scoring_periods": {
+    "daily": 1,
+    "weekly": 7,
+    "monthly": 30,
+    "quarterly": 90
+  },
+  "agent_scores": {},
+  "coaching_threshold": 70
+}

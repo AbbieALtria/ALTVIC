@@ -1,0 +1,58 @@
+{
+  "forecast_settings": {
+    "default_days_ahead": 30,
+    "historical_months": 12,
+    "confidence_level": 0.95,
+    "seasonality": {
+      "daily": true,
+      "weekly": true,
+      "monthly": true,
+      "yearly": false
+    }
+  },
+  "holiday_impacts": {
+    "New Years Day": 0.6,
+    "Memorial Day": 0.7,
+    "Independence Day": 0.5,
+    "Labor Day": 0.7,
+    "Thanksgiving": 0.4,
+    "Christmas": 0.3,
+    "Day After Christmas": 0.5,
+    "New Years Eve": 0.6
+  },
+  "day_of_week_multipliers": {
+    "Monday": 1.2,
+    "Tuesday": 1.1,
+    "Wednesday": 1.0,
+    "Thursday": 1.0,
+    "Friday": 1.1,
+    "Saturday": 0.6,
+    "Sunday": 0.5
+  },
+  "hour_multipliers": {
+    "0": 0.1,
+    "1": 0.05,
+    "2": 0.02,
+    "3": 0.01,
+    "4": 0.01,
+    "5": 0.02,
+    "6": 0.1,
+    "7": 0.3,
+    "8": 0.7,
+    "9": 1.0,
+    "10": 1.2,
+    "11": 1.3,
+    "12": 1.2,
+    "13": 1.3,
+    "14": 1.4,
+    "15": 1.3,
+    "16": 1.2,
+    "17": 1.0,
+    "18": 0.8,
+    "19": 0.6,
+    "20": 0.4,
+    "21": 0.3,
+    "22": 0.2,
+    "23": 0.1
+  }
+}

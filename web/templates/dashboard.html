@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Altria Ops • Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- ── Sidebar ────────────────────────────────────────────── -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="fas fa-headset"></i></div>
+            <div>
+                <h2>Altria Ops</h2>
+                <p>Call Center Analytics</p>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-gauge-high"></i> Dashboard
+            </a>
+            <a href="#" class="nav-item" data-page="agents">
+                <i class="fas fa-users"></i> Live Agents
+            </a>
+            <a href="#" class="nav-item" data-page="campaigns">
+                <i class="fas fa-bullhorn"></i> Campaigns
+            </a>
+            <a href="#" class="nav-item" data-page="email">
+                <i class="fas fa-envelope"></i> Email Channel
+                <span class="nav-badge" id="emailBadge" style="display:none">!</span>
+            </a>
+            <a href="#" class="nav-item" data-page="reports">
+                <i class="fas fa-chart-bar"></i> EOD Report
+            </a>
+            <a href="#" class="nav-item" data-page="vicidial-reports">
+                <i class="fas fa-chart-line"></i> Reports
+            </a>
+            <a href="#" class="nav-item" data-page="quality">
+                <i class="fas fa-star"></i> QC Scoring
+                <span class="nav-badge" id="qcBadge" style="display:none">!</span>
+            </a>
+            <a href="#" class="nav-item" data-page="alerts">
+                <i class="fas fa-bell"></i> Alerts
+                <span class="nav-badge" id="alertBadge" style="display:none">0</span>
+            </a>
+            <a href="#" class="nav-item" data-page="agent-mgmt">
+                <i class="fas fa-id-badge"></i> Agent Management
+            </a>
+            <a href="#" class="nav-item" data-page="forecast">
+                <i class="fas fa-chart-line"></i> Predictive Analytics
+            </a>
+            <a href="#" class="nav-item" data-page="schedule">
+                <i class="fas fa-calendar-check"></i> Schedule
+            </a>
+            <a href="#" class="nav-item" data-page="anomaly">
+                <i class="fas fa-triangle-exclamation"></i> Anomaly Detection
+                <span class="nav-badge" id="anomalyBadge" style="display:none">!</span>
+            </a>
+            <a href="#" class="nav-item" data-page="dids">
+                <i class="fas fa-phone"></i> DID Inspector
+            </a>
+            <a href="#" class="nav-item" data-page="query-monitor">
+                <i class="fas fa-database"></i> Query Monitor
+            </a>
+            <a href="#" class="nav-item" data-page="apt">
+                <i class="fas fa-plug"></i> API Services
+            </a>
+            <a href="#" class="nav-item" data-page="qa-package">
+                <i class="fas fa-box-open"></i> Client QA Package
+            </a>
+            <a href="#" class="nav-item" data-page="mapping">
+                <i class="fas fa-link"></i> Agent Mapping
+                <span class="nav-badge" id="mappingBadge" style="display:none">!</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="db-status">
+                <span class="dot" id="vicidialDot"></span> VICIdial
+                <span class="dot" id="emailDot" style="margin-left:10px"></span> Email DB
+            </div>
+            <div id="serverTime" style="font-size:12px; margin-top:6px; color:#94a3b8;">--:--:--</div>
+            <div style="font-size:11px; color:#475569; margin-top:4px;">© 2026 Altria Ops v2.0</div>
+        </div>
+    </aside>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="main-content">
+        <div class="top-bar">
+            <h1 class="page-title" id="pageTitle">Dashboard</h1>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span id="lastUpdated" style="font-size:13px; color:#94a3b8;">--</span>
+                <button class="btn-refresh" id="refreshAllBtn">
+                    <i class="fas fa-rotate-right"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- ══ DASHBOARD PAGE ══════════════════════════════════ -->
+        <div id="dashboard-page" class="page active">
+
+            <!-- KPI Row -->
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-blue">
+                    <div class="kpi-icon"><i class="fas fa-phone-volume"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Total Calls Today</div>
+                        <div class="kpi-value" id="kpiTotalCalls">—</div>
+                        <div class="kpi-sub" id="kpiAnswerRate">Loading...</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-green">
+                    <div class="kpi-icon"><i class="fas fa-headset"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Online Agents</div>
+                        <div class="kpi-value" id="kpiAgents">—</div>
+                        <div class="kpi-sub" id="kpiInCall">Loading...</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-amber">
+                    <div class="kpi-icon"><i class="fas fa-hourglass-half"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Calls Waiting</div>
+                        <div class="kpi-value" id="kpiQueue">—</div>
+                        <div class="kpi-sub">In queue right now</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-red">
+                    <div class="kpi-icon"><i class="fas fa-phone-slash"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Abandon Rate</div>
+                        <div class="kpi-value" id="kpiAbandon">—</div>
+                        <div class="kpi-sub">Today vs valid calls</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-purple">
+                    <div class="kpi-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="kpi-body">
+                        <div class="kpi-label">Emails Today</div>
+                        <div class="kpi-value" id="kpiEmails">—</div>
+                        <div class="kpi-sub" id="kpiEmailSub">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Today's Call Volume by Hour</h3>
+                    </div>
+                    <div class="chart-container"><canvas id="volumeChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Agent Status</h3>
+                    </div>
+                    <div class="chart-container"><canvas id="statusChart"></canvas></div>
+                    <div id="statusLegend" style="margin-top:12px; font-size:13px;"></div>
+                </div>
+            </div>
+
+            <!-- Week + Top Agents -->
+            <div class="charts-row two-col">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Last 7 Days — Calls vs Emails</h3>
+                    </div>
+                    <div class="chart-container" style="min-height:280px;"><canvas id="weekChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Top Agents Today</h3>
+                        <div class="tab-pills">
+                            <button class="tab-pill active" data-period="today">Today</button>
+                            <button class="tab-pill" data-period="week">Week</button>
+                        </div>
+                    </div>
+                    <div id="topAgentsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ LIVE AGENTS PAGE ════════════════════════════════ -->
+        <div id="agents-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Live Agent Status</h2>
+                        <p class="subtitle">Real-time activity — auto-refreshes every 30s</p>
+                    </div>
+                    <div id="agentStatusSummary" class="status-pills"></div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th><th>Name</th><th>Status</th>
+                                <th>Campaign</th><th>Time in Status</th><th>Last Call</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agentsTableBody">
+                            <tr><td colspan="6" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ CAMPAIGNS PAGE ═════════════════════════════════ -->
+        <div id="campaigns-page" class="page">
+            <!-- Time frame filter -->
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+                <span style="font-weight:700;font-size:13px;color:#475569;">⏱ Filter:</span>
+                <input type="time" id="campTimeStart" value="09:00" style="padding:5px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;font-weight:600;color:#374151;">
+                <span style="color:#94a3b8;font-size:13px;">→</span>
+                <input type="time" id="campTimeEnd" value="18:00" style="padding:5px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;font-weight:600;color:#374151;">
+                <button class="time-preset" onclick="setCampTime('09:00','18:00')">Business Hours</button>
+                <button class="time-preset" onclick="setCampTime('00:00','11:59')">Morning</button>
+                <button class="time-preset" onclick="setCampTime('12:00','17:59')">Afternoon</button>
+                <button class="time-preset" onclick="setCampTime('18:00','23:59')">Evening</button>
+                <button class="time-preset" id="campAllDayBtn" onclick="clearCampTime()" style="background:#6366f1;color:white;border-color:#6366f1;">All Day</button>
+                <button class="btn-primary" id="campTimeApplyBtn" style="padding:6px 18px;font-size:13px;">Apply</button>
+                <button onclick="exportCampCSV()" style="padding:6px 14px;border-radius:9px;border:1px solid #22c55e;background:white;color:#22c55e;font-size:13px;font-weight:700;cursor:pointer;">⬇ CSV</button>
+            </div>
+
+            <!-- Active filter indicator -->
+            <div id="campActiveFilter" style="display:none;align-items:center;gap:8px;padding:8px 16px;background:#eef2ff;border-radius:10px;border:1px solid #c7d2fe;font-size:13px;color:#4338ca;margin-bottom:10px;flex-wrap:wrap;"></div>
+
+            <!-- Tab bar -->
+            <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+                <button class="tab-pill active" data-ctab="camp-today">📊 Today</button>
+                <button class="tab-pill" data-ctab="camp-7d">📅 Last 7 Days</button>
+                <button class="tab-pill" data-ctab="camp-30d">📆 Last 30 Days</button>
+                <button class="tab-pill" data-ctab="camp-specific">🔍 Specific Campaign</button>
+                <button class="tab-pill" data-ctab="camp-compare">⚖️ Compare</button>
+                <button class="tab-pill" data-ctab="camp-hourly">⏰ Hourly Stats</button>
+                <button class="tab-pill" data-ctab="camp-service">📈 Service Level</button>
+                <button class="tab-pill" data-ctab="camp-queue">🚦 Live Queue</button>
+            </div>
+
+            <!-- Today's Performance -->
+            <div id="camp-today" class="camp-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>Campaign Performance</h2><p class="subtitle">Today's metrics by campaign</p></div>
+                        <div id="campaignTotals" class="status-pills"></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Campaign</th><th class="num">Calls</th><th class="num">Answered</th>
+                                <th class="num">Ans %</th><th class="num">Abandoned</th>
+                                <th class="num">Abd %</th><th class="num">Avg Talk</th><th class="num">Last Call</th>
+                            </tr></thead>
+                            <tbody id="campaignsTableBody">
+                                <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Last 7 Days Performance -->
+            <div id="camp-7d" class="camp-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>Campaign Performance — Last 7 Days</h2><p class="subtitle">Totals per campaign for the past 7 days</p></div>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <div id="camp7dTotals" class="status-pills"></div>
+                            <button class="btn-primary" id="camp7dLoadBtn"><i class="fas fa-rotate-right"></i> Load</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Campaign</th><th class="num">Calls</th><th class="num">Answered</th>
+                                <th class="num">Ans %</th><th class="num">Abandoned</th>
+                                <th class="num">Abd %</th><th class="num">Avg Talk</th>
+                                <th class="num">Last Call</th><th class="num">Total Mins</th>
+                            </tr></thead>
+                            <tbody id="camp7dBody"><tr><td colspan="9" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Last 30 Days Performance -->
+            <div id="camp-30d" class="camp-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>Campaign Performance — Last 30 Days</h2><p class="subtitle">Totals per campaign for the past 30 days</p></div>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <div id="camp30dTotals" class="status-pills"></div>
+                            <button class="btn-primary" id="camp30dLoadBtn"><i class="fas fa-rotate-right"></i> Load</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Campaign</th><th class="num">Calls</th><th class="num">Answered</th>
+                                <th class="num">Ans %</th><th class="num">Abandoned</th>
+                                <th class="num">Abd %</th><th class="num">Avg Talk</th>
+                                <th class="num">Last Call</th><th class="num">Active Days</th>
+                            </tr></thead>
+                            <tbody id="camp30dBody"><tr><td colspan="9" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specific Campaign — 30-Day History -->
+            <div id="camp-specific" class="camp-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <select id="campSpecificSelect" style="min-width:200px;"><option value="">Select Campaign…</option></select>
+                        <select id="campSpecificDays">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                        <button class="btn-primary" id="campSpecificLoadBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div id="campSpecificOut">
+                    <div style="text-align:center;padding:60px;color:#94a3b8;"><i class="fas fa-search" style="font-size:32px;opacity:.3;display:block;margin-bottom:12px;"></i><p>Select a campaign and click Load</p></div>
+                </div>
+            </div>
+
+            <!-- Compare Two Campaigns -->
+            <div id="camp-compare" class="camp-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <select id="campCmp1" style="min-width:160px;"><option value="">Campaign A…</option></select>
+                        <select id="campCmp2" style="min-width:160px;"><option value="">Campaign B…</option></select>
+                        <select id="campCmpDays">
+                            <option value="7" selected>Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                        </select>
+                        <button class="btn-primary" id="campCmpLoadBtn"><i class="fas fa-chart-bar"></i> Compare</button>
+                    </div>
+                </div>
+                <div id="campCmpOut">
+                    <div style="text-align:center;padding:60px;color:#94a3b8;"><i class="fas fa-balance-scale" style="font-size:32px;opacity:.3;display:block;margin-bottom:12px;"></i><p>Select two campaigns and click Compare</p></div>
+                </div>
+            </div>
+
+            <!-- Hourly Campaign Stats -->
+            <div id="camp-hourly" class="camp-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <select id="campHourlySelect" style="min-width:200px;"><option value="">All Campaigns</option></select>
+                        <button class="btn-primary" id="campHourlyLoadBtn"><i class="fas fa-clock"></i> Load Today's Hourly</button>
+                    </div>
+                </div>
+                <div class="charts-row" style="grid-template-columns:1fr;">
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Hourly Call Volume</h3></div>
+                        <div class="chart-container" style="min-height:280px;"><canvas id="campHourlyChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px;">
+                    <div class="card-header"><h2>Hourly Breakdown</h2></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Hour</th><th class="num">Calls</th><th class="num">Answered</th>
+                                <th class="num">Ans %</th><th class="num">Abandoned</th><th class="num">Avg Queue</th>
+                            </tr></thead>
+                            <tbody id="campHourlyBody"><tr><td colspan="6" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Level -->
+            <div id="camp-service" class="camp-section" style="display:none;">
+                <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                    <button class="tab-pill active" data-sltab="sl-current">Current</button>
+                    <button class="tab-pill" data-sltab="sl-trend">7-Day Trend</button>
+                    <button class="tab-pill" data-sltab="sl-hourly">Hourly</button>
+                    <button class="tab-pill" data-sltab="sl-breaches">Breaches</button>
+                </div>
+                <div id="sl-current" class="sl-section">
+                    <div class="card">
+                        <div class="card-header"><h2>📊 Current Service Level</h2><p class="subtitle">Calls answered within 20 seconds — today</p></div>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead><tr><th>Campaign</th><th class="num">Total</th><th class="num">In SLA</th><th class="num">SL%</th><th class="num">Avg Wait</th><th class="num">Abandoned</th><th>Status</th></tr></thead>
+                                <tbody id="slCurrentBody"><tr><td colspan="7" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="sl-trend" class="sl-section" style="display:none;">
+                    <div class="card">
+                        <div class="card-header"><h2>📈 Service Level — Last 7 Days</h2></div>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead><tr><th>Date</th><th class="num">Total</th><th class="num">In SLA</th><th class="num">SL%</th><th class="num">Avg Wait</th></tr></thead>
+                                <tbody id="slTrendBody"><tr><td colspan="5" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="sl-hourly" class="sl-section" style="display:none;">
+                    <div class="card">
+                        <div class="card-header"><h2>⏰ Hourly Service Level — Today</h2></div>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead><tr><th>Hour</th><th class="num">Total</th><th class="num">In SLA</th><th class="num">SL%</th><th class="num">Avg Wait</th></tr></thead>
+                                <tbody id="slHourlyBody"><tr><td colspan="5" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="sl-breaches" class="sl-section" style="display:none;">
+                    <div class="card">
+                        <div class="card-header"><h2>🚨 SLA Breaches — Last 7 Days</h2></div>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead><tr><th>Date</th><th>Campaign</th><th class="num">Total</th><th class="num">SL%</th><th class="num">Avg Wait</th><th class="num">Max Wait</th></tr></thead>
+                                <tbody id="slBreachBody"><tr><td colspan="6" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Queue -->
+            <div id="camp-queue" class="camp-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>🚦 Live Queue Monitor</h2><p class="subtitle">Calls waiting now — auto-refreshes</p></div>
+                        <button class="btn-primary" id="campQueueRefreshBtn"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <div id="campQueueContent">
+                        <div class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px;">
+                    <div class="card-header"><h2>Inbound Groups</h2></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr><th>Group ID</th><th>Name</th><th>Active</th><th class="num">Today</th><th class="num">Waiting</th><th>Oldest Wait</th></tr></thead>
+                            <tbody id="inboundGroupsBody"><tr><td colspan="6" class="loading-cell">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ EMAIL CHANNEL PAGE ═════════════════════════════ -->
+        <div id="email-page" class="page">
+
+            <!-- Date selector -->
+            <div class="card" style="padding:20px 28px; margin-bottom:24px;">
+                <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                    <label style="font-weight:600; color:#475569;">Date:</label>
+                    <select id="emailDateSelect" style="min-width:160px;">
+                        <option value="today">Today</option>
+                        <option value="yesterday" selected>Yesterday</option>
+                        <option value="custom">Custom…</option>
+                    </select>
+                    <input type="date" id="emailCustomDate" style="display:none; min-width:180px;">
+                    <button id="emailLoadBtn" class="btn-primary">
+                        <i class="fas fa-search"></i> Load
+                    </button>
+                    <span id="emailLoadingSpinner" style="display:none; color:#64748b;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Email KPI cards -->
+            <div class="kpi-grid email-kpi-grid" id="emailKpiGrid">
+                <div class="kpi-card kpi-blue"><div class="kpi-icon"><i class="fas fa-envelope"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Total Emails</div><div class="kpi-value" id="ekTotal">—</div><div class="kpi-sub" id="ekAgents">—</div></div></div>
+                <div class="kpi-card kpi-red"><div class="kpi-icon"><i class="fas fa-ban"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Cancellations</div><div class="kpi-value" id="ekCancels">—</div></div></div>
+                <div class="kpi-card kpi-orange"><div class="kpi-icon"><i class="fas fa-rotate-left"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Full Refunds</div><div class="kpi-value" id="ekFullRef">—</div></div></div>
+                <div class="kpi-card kpi-amber"><div class="kpi-icon"><i class="fas fa-rotate-left"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Partial Refunds</div><div class="kpi-value" id="ekPartRef">—</div></div></div>
+                <div class="kpi-card kpi-green"><div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Total Refund $</div><div class="kpi-value" id="ekRefVal">—</div></div></div>
+                <div class="kpi-card kpi-cyan"><div class="kpi-icon"><i class="fas fa-box"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Order Status</div><div class="kpi-value" id="ekOrderSt">—</div></div></div>
+                <div class="kpi-card kpi-purple"><div class="kpi-icon"><i class="fas fa-question-circle"></i></div>
+                    <div class="kpi-body"><div class="kpi-label">Gen Inquiry</div><div class="kpi-value" id="ekGenInq">—</div></div></div>
+            </div>
+
+            <!-- Email trend chart + type donut -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header"><h3>Email Volume — Last 7 Days</h3></div>
+                    <div class="chart-container"><canvas id="emailTrendChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header"><h3>Email Types (selected day)</h3></div>
+                    <div class="chart-container"><canvas id="emailTypeChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Agent breakdown table -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Agent Email Breakdown</h2>
+                        <p class="subtitle" id="emailTableSubtitle">—</p>
+                    </div>
+                    <span id="unmappedWarning" class="badge-warn" style="display:none"></span>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Agent (pinktools)</th><th>VICIdial</th>
+                                <th class="num">Emails</th><th class="num">Cancels</th>
+                                <th class="num">Full Ref</th><th class="num">Part Ref</th>
+                                <th class="num">Refund $</th><th>Top Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="emailAgentsBody">
+                            <tr><td colspan="8" class="loading-cell">Select a date and click Load</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ EOD REPORT PAGE ════════════════════════════════ -->
+        <div id="reports-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <h2>End of Day Report</h2>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <select id="reportDate">
+                            <option value="today">Today</option>
+                            <option value="yesterday" selected>Yesterday</option>
+                            <option value="custom">Custom Date</option>
+                        </select>
+                        <input type="date" id="customDate" style="display:none;">
+                        <button id="generateReportBtn" class="btn-primary">
+                            <i class="fas fa-chart-line"></i> Generate
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Time range filter -->
+                <div style="margin-bottom:16px; padding:16px 20px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
+                    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                        <span style="font-weight:600; color:#475569; font-size:14px;"><i class="fas fa-clock" style="color:#6366f1; margin-right:6px;"></i>Time Range (EST):</span>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <button class="time-preset active" data-start="" data-end="" onclick="setTimePreset(this,'','')">All Day</button>
+                            <button class="time-preset" data-start="08:00" data-end="17:00" onclick="setTimePreset(this,'08:00','17:00')">8am–5pm</button>
+                            <button class="time-preset" data-start="08:00" data-end="20:00" onclick="setTimePreset(this,'08:00','20:00')">8am–8pm</button>
+                            <button class="time-preset" data-start="09:00" data-end="18:00" onclick="setTimePreset(this,'09:00','18:00')">9am–6pm</button>
+                            <button class="time-preset" data-start="17:00" data-end="23:59" onclick="setTimePreset(this,'17:00','23:59')">After Hours</button>
+                            <span style="color:#cbd5e1;">|</span>
+                            <span style="font-size:13px; color:#64748b;">Custom:</span>
+                            <input type="time" id="timeStart" value="" style="padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+                            <span style="color:#94a3b8;">to</span>
+                            <input type="time" id="timeEnd" value="" style="padding:6px 10px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaign filter -->
+                <div id="campaignFilterWrap" style="margin-bottom:20px; display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <label style="font-weight:600; color:#475569; font-size:14px;">
+                            <i class="fas fa-filter" style="margin-right:6px; color:#3b82f6;"></i>
+                            Filter by Campaign
+                        </label>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="selectAllCampaigns(true)" style="background:none; border:1px solid #e2e8f0; padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px; color:#3b82f6;">Select All</button>
+                            <button onclick="selectAllCampaigns(false)" style="background:none; border:1px solid #e2e8f0; padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px; color:#64748b;">Clear</button>
+                            <button id="applyFilterBtn" class="btn-primary" style="padding:5px 14px; font-size:13px;">
+                                <i class="fas fa-check"></i> Apply
+                            </button>
+                        </div>
+                    </div>
+                    <div id="campaignCheckboxes" style="display:flex; flex-wrap:wrap; gap:8px; max-height:160px; overflow-y:auto; padding:12px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;"></div>
+                </div>
+                <div id="reportContent" class="report-placeholder">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Select a date and click Generate</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ ALERTS PAGE ════════════════════════════════════ -->
+        <div id="alerts-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Active Alerts</h2>
+                    <button id="refreshAlertsBtn" class="btn-primary">
+                        <i class="fas fa-rotate-right"></i> Refresh
+                    </button>
+                </div>
+                <div id="alertsList" class="alerts-list">
+                    <div class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading alerts...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ VICIDIAL REPORTS PAGE ════════════════════════ -->
+        <div id="vicidial-reports-page" class="page">
+            <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+                <button class="tab-pill active" data-report="agent-perf">👤 Agent Performance</button>
+                <button class="tab-pill" data-report="campaign-trend">📈 Campaign Trend</button>
+                <button class="tab-pill" data-report="hourly-heatmap">🔥 Hourly Heatmap</button>
+                <button class="tab-pill" data-report="dispositions">📊 Dispositions</button>
+            </div>
+
+            <!-- Agent Performance -->
+            <div id="report-agent-perf" class="report-section">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <label style="font-weight:600;color:#475569;">From:</label>
+                        <input type="date" id="agentPerfStart">
+                        <label style="font-weight:600;color:#475569;">To:</label>
+                        <input type="date" id="agentPerfEnd">
+                        <button class="btn-primary" id="agentPerfLoadBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>Agent Performance</h2><div id="agentPerfMeta" class="status-pills"></div></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Agent</th><th>Name</th>
+                                <th class="num">Total</th><th class="num">Valid</th><th class="num">Ghost</th>
+                                <th class="num">Ans %</th><th class="num">Talk Time</th><th class="num">Avg Call</th>
+                            </tr></thead>
+                            <tbody id="agentPerfBody"><tr><td colspan="8" class="loading-cell">Select dates and click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campaign Trend -->
+            <div id="report-campaign-trend" class="report-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <label style="font-weight:600;color:#475569;">Period:</label>
+                        <select id="trendDays">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                        <button class="btn-primary" id="trendLoadBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="charts-row" style="grid-template-columns:1fr;">
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Call Volume & Answer Rate Trend</h3></div>
+                        <div class="chart-container" style="min-height:300px;"><canvas id="trendChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>Daily Breakdown</h2></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr><th>Date</th><th class="num">Calls</th><th class="num">Answered</th><th class="num">Ans %</th><th class="num">Abandoned</th><th class="num">Avg Queue</th></tr></thead>
+                            <tbody id="trendBody"><tr><td colspan="6" class="loading-cell">Select period and click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hourly Heatmap -->
+            <div id="report-hourly-heatmap" class="report-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header"><h2>Hourly Call Volume Heatmap — Last 7 Days</h2>
+                        <button class="btn-primary" id="heatmapLoadBtn"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <div id="heatmapContainer" style="overflow-x:auto;padding:8px 0;"></div>
+                </div>
+            </div>
+
+            <!-- ── Disposition Report ── -->
+            <div id="report-dispositions" class="report-section" style="display:none;">
+
+                <!-- ── Step 1: Filters ── -->
+                <div class="card" style="margin-bottom:16px;padding:20px 24px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label class="form-label">📅 From</label>
+                            <input type="date" id="dispDateStart" style="width:100%;padding:8px 12px;border-radius:9px;border:1px solid #cbd5e1;font-size:14px;">
+                        </div>
+                        <div>
+                            <label class="form-label">📅 To</label>
+                            <input type="date" id="dispDateEnd" style="width:100%;padding:8px 12px;border-radius:9px;border:1px solid #cbd5e1;font-size:14px;">
+                        </div>
+                        <div>
+                            <label class="form-label">📢 Campaign</label>
+                            <select id="dispCampaign" style="width:100%;padding:8px 12px;border-radius:9px;border:1px solid #cbd5e1;font-size:14px;" onchange="onDispCampaignChange()">
+                                <option value="">All Campaigns</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:flex-end;">
+                            <button class="btn-primary" id="dispLoadBtn" style="flex:1;"><i class="fas fa-chart-bar"></i> Generate</button>
+                            <button id="dispExportBtn" onclick="exportDispositionCSV()" title="Export CSV" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;background:white;font-size:13px;font-weight:600;cursor:pointer;color:#22c55e;display:none;">
+                                <i class="fas fa-file-csv"></i>
+                            </button>
+                            <button id="dispPrintBtn" onclick="printDispositionReport()" title="Print / Save PDF" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;background:white;font-size:13px;cursor:pointer;color:#3b82f6;display:none;">
+                                <i class="fas fa-print"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Agent checkboxes (populated when campaign selected) -->
+                    <div id="dispAgentWrap">
+                        <label class="form-label">👤 Agents
+                            <span id="dispAgentCount" style="font-weight:400;color:#94a3b8;margin-left:6px;font-size:12px;"></span>
+                        </label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                            <button type="button" onclick="dispSelectAllAgents(true)" style="padding:3px 12px;border-radius:6px;border:1px solid #e2e8f0;background:white;font-size:12px;cursor:pointer;color:#3b82f6;">All</button>
+                            <button type="button" onclick="dispSelectAllAgents(false)" style="padding:3px 12px;border-radius:6px;border:1px solid #e2e8f0;background:white;font-size:12px;cursor:pointer;color:#64748b;">None</button>
+                        </div>
+                        <div id="dispAgentCheckboxes" style="display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;min-height:44px;">
+                            <span style="color:#94a3b8;font-size:13px;align-self:center;">Select a campaign to filter agents, or leave blank for all</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Report output (injected by JS) ── -->
+                <div id="dispReportOut">
+                    <div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+                        <i class="fas fa-chart-bar" style="font-size:40px;margin-bottom:16px;opacity:0.3;display:block;"></i>
+                        <p style="font-size:15px;">Select a campaign &amp; date range, then click <strong>Generate</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ QUALITY SCORING PAGE ════════════════════════ -->
+        <div id="quality-page" class="page">
+            <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+                <button class="tab-pill active" data-qtab="qc-dashboard">📊 Dashboard</button>
+                <button class="tab-pill" data-qtab="qc-evaluations">📋 Evaluations</button>
+                <button class="tab-pill" data-qtab="qc-top">🏆 Top Performers</button>
+                <button class="tab-pill" data-qtab="qc-coaching">🎯 Coaching</button>
+                <button class="tab-pill" data-qtab="qc-add">✏️ Add Evaluation</button>
+                <button class="tab-pill" data-qtab="qc-ai">🤖 AI Auto-Score</button>
+            </div>
+
+            <!-- QC Dashboard -->
+            <div id="qc-dashboard" class="qc-section">
+                <div class="kpi-grid" id="qcKpiGrid"></div>
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Score Trend</h3>
+                            <select id="qcTrendDays"><option value="7">7 days</option><option value="30" selected>30 days</option></select>
+                        </div>
+                        <div class="chart-container"><canvas id="qcTrendChart"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Score Distribution</h3></div>
+                        <div class="chart-container"><canvas id="qcDistChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluations List -->
+            <div id="qc-evaluations" class="qc-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <select id="qcEvalAgent" style="min-width:180px;"><option value="">All Agents</option></select>
+                        <select id="qcEvalDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>
+                        <button class="btn-primary" id="qcEvalLoadBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>Evaluations</h2><div id="qcEvalMeta" class="status-pills"></div></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>ID</th><th>Date</th><th>Agent</th><th>Campaign</th>
+                                <th class="num">Duration</th><th class="num">Score</th>
+                                <th class="num">AI Score</th><th>Source</th><th>Action</th>
+                            </tr></thead>
+                            <tbody id="qcEvalBody"><tr><td colspan="9" class="loading-cell">Click Load to fetch evaluations</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Eval detail drawer -->
+                <div id="qcDetailDrawer" class="detail-drawer" style="display:none;">
+                    <div class="detail-drawer-header">
+                        <h3 id="qcDetailTitle">Evaluation Detail</h3>
+                        <button onclick="document.getElementById('qcDetailDrawer').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:#475569;">✕</button>
+                    </div>
+                    <div id="qcDetailContent"></div>
+                </div>
+            </div>
+
+            <!-- Top Performers -->
+            <div id="qc-top" class="qc-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <select id="qcTopDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>
+                        <button class="btn-primary" id="qcTopLoadBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>🏆 Top Performers by QC Score</h2></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Rank</th><th>Agent</th><th>Name</th>
+                                <th class="num">Evals</th><th class="num">Avg Score</th>
+                                <th class="num">Range</th><th>Stability</th><th>Source</th>
+                            </tr></thead>
+                            <tbody id="qcTopBody"><tr><td colspan="8" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coaching -->
+            <div id="qc-coaching" class="qc-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <select id="qcCoachDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>
+                        <button class="btn-primary" id="qcCoachLoadBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>🎯 Agents Needing Coaching</h2><p class="subtitle">Agents with avg score below 80%</p></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Agent</th><th>Name</th>
+                                <th class="num">Evals</th><th class="num">Avg Score</th>
+                                <th class="num">Min Score</th><th class="num">Below 70%</th><th>Priority</th>
+                            </tr></thead>
+                            <tbody id="qcCoachBody"><tr><td colspan="7" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Auto-Score -->
+            <div id="qc-ai" class="qc-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <select id="aiCampaign" style="min-width:180px;"><option value="">All Campaigns</option></select>
+                        <select id="aiAgent" style="min-width:180px;"><option value="">All Agents</option></select>
+                        <select id="aiDays"><option value="3">Last 3 days</option><option value="7" selected>Last 7 days</option><option value="14">Last 14 days</option></select>
+                        <button class="btn-primary" id="aiCallsLoadBtn"><i class="fas fa-search"></i> Find Calls</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2>🤖 AI Auto-Score</h2>
+                            <p class="subtitle">Calls with recordings ready for AI evaluation</p>
+                        </div>
+                        <div id="aiCallsCount" class="status-pills"></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Date</th><th>Agent</th><th>Campaign</th>
+                                <th class="num">Duration</th><th>Phone</th><th>Action</th>
+                            </tr></thead>
+                            <tbody id="aiCallsBody">
+                                <tr><td colspan="6" class="loading-cell">Click "Find Calls" to load available recordings</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AI Scoring Progress Panel -->
+                <div id="aiProgressPanel" style="display:none;" class="card">
+                    <div class="card-header">
+                        <h2>🤖 AI Scoring in Progress</h2>
+                        <button onclick="cancelAiJob()" style="background:none;border:1px solid #e2e8f0;padding:6px 14px;border-radius:8px;cursor:pointer;color:#64748b;font-size:13px;">Cancel / Hide</button>
+                    </div>
+                    <div id="aiProgressInfo" style="margin-bottom:16px;font-size:13px;color:#475569;font-weight:600;"></div>
+                    <!-- Progress bar -->
+                    <div style="background:#f1f5f9;border-radius:8px;height:12px;margin-bottom:16px;overflow:hidden;">
+                        <div id="aiProgressBar" style="height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:8px;width:0%;transition:width 0.4s;"></div>
+                    </div>
+                    <!-- Live log -->
+                    <div id="aiLog" style="background:#0f172a;border-radius:10px;padding:16px;font-family:monospace;font-size:13px;color:#94a3b8;min-height:80px;max-height:180px;overflow-y:auto;line-height:1.8;"></div>
+                </div>
+
+                <!-- AI Result Panel (kept hidden, result goes to modal) -->
+                <div id="aiResultPanel" style="display:none;"></div>
+            </div>
+
+            <!-- Add Evaluation -->
+            <div id="qc-add" class="qc-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header"><h2>✏️ Add QC Evaluation</h2><p class="subtitle">Score a call manually</p></div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                        <div>
+                            <label class="form-label">Search Recent Calls</label>
+                            <div style="display:flex;gap:8px;">
+                                <select id="qcCallAgent" style="flex:1;"><option value="">All Agents</option></select>
+                                <button class="btn-primary" id="qcCallLoadBtn"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Or Enter UniqueID directly</label>
+                            <input type="text" id="qcManualUID" placeholder="e.g. 1234567890.12345" style="width:100%;padding:9px 14px;border-radius:9px;border:1px solid #cbd5e1;font-size:14px;">
+                        </div>
+                    </div>
+
+                    <!-- Recent calls table -->
+                    <div id="qcRecentCallsWrap" style="margin-bottom:20px;">
+                        <div class="table-wrap" style="max-height:220px;overflow-y:auto;">
+                            <table class="data-table">
+                                <thead><tr><th>UniqueID</th><th>Date</th><th>Agent</th><th>Campaign</th><th class="num">Duration</th><th>Select</th></tr></thead>
+                                <tbody id="qcRecentCallsBody"><tr><td colspan="6" class="loading-cell">Click search to load recent calls</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Selected call info -->
+                    <div id="qcSelectedCall" style="background:#f0fdf4;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:none;">
+                        <strong>Selected call:</strong> <span id="qcSelectedUID">—</span> &nbsp;|&nbsp;
+                        Agent: <span id="qcSelectedAgent">—</span> &nbsp;|&nbsp;
+                        Duration: <span id="qcSelectedDuration">—</span>
+                    </div>
+
+                    <!-- Checkpoints form -->
+                    <div id="qcCheckpointsForm" style="display:none;">
+                        <h3 style="margin-bottom:16px;">Checkpoint Scores</h3>
+                        <div id="qcCheckpointsList"></div>
+                        <div style="margin-top:20px;">
+                            <label class="form-label">Comments / Notes</label>
+                            <textarea id="qcComments" rows="3" style="width:100%;padding:10px 14px;border-radius:9px;border:1px solid #cbd5e1;font-size:14px;resize:vertical;" placeholder="Optional coaching notes..."></textarea>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:16px;margin-top:16px;">
+                            <button class="btn-primary" id="qcSubmitBtn"><i class="fas fa-save"></i> Save Evaluation</button>
+                            <span id="qcLiveScore" style="font-size:20px;font-weight:800;color:#3b82f6;"></span>
+                        </div>
+                        <div id="qcSubmitResult" style="margin-top:12px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ AGENT MANAGEMENT PAGE ════════════════════════ -->
+        <div id="agent-mgmt-page" class="page">
+            <!-- Sub-tab bar -->
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" id="agentMgmtTabs">
+                <button class="tab-pill active" data-atab="ag-lookup">🔍 Lookup</button>
+                <button class="tab-pill" data-atab="ag-performance">📊 Performance</button>
+                <button class="tab-pill" data-atab="ag-realtime">📡 Real-time</button>
+                <button class="tab-pill" data-atab="ag-login">🔐 Login History</button>
+                <button class="tab-pill" data-atab="ag-notes">📝 Notes</button>
+                <button class="tab-pill" data-atab="ag-top">🏆 Top Performers</button>
+                <button class="tab-pill" data-atab="ag-sales">💰 Sales Dashboard</button>
+                <button class="tab-pill" data-atab="ag-outbound">📤 Outbound Monitor</button>
+                <button class="tab-pill" data-atab="ag-inbound">📞 Inbound Groups</button>
+            </div>
+
+            <!-- 1. Lookup -->
+            <div id="ag-lookup" class="ag-section">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <select id="agLookupSelect" style="min-width:220px;"></select>
+                        <button class="btn-primary" id="agLookupBtn"><i class="fas fa-search"></i> Load Profile</button>
+                    </div>
+                </div>
+                <div id="agLookupResult"></div>
+            </div>
+
+            <!-- 2. Performance -->
+            <div id="ag-performance" class="ag-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <select id="agPerfDays"><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select>
+                        <select id="agPerfCampaign" style="min-width:160px;"><option value="">All Campaigns</option></select>
+                        <button class="btn-primary" id="agPerfBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>Agent Performance</h2><div id="agPerfMeta" class="status-pills"></div></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Agent</th><th>Name</th>
+                                <th class="num">Calls</th><th class="num">Valid</th>
+                                <th class="num">Days</th><th class="num">Talk Time</th>
+                                <th class="num">Avg Call</th><th class="num">Minutes</th>
+                            </tr></thead>
+                            <tbody id="agPerfBody"><tr><td colspan="8" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Real-time -->
+            <div id="ag-realtime" class="ag-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>📡 Real-time Agent Status</h2>
+                        <button class="btn-primary" onclick="loadAgentRealtime()"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <div id="agRealtimeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:4px 0;"></div>
+                </div>
+            </div>
+
+            <!-- 4. Login History -->
+            <div id="ag-login" class="ag-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <select id="agLoginSelect" style="min-width:220px;"></select>
+                        <select id="agLoginDays"><option value="3">3 days</option><option value="7" selected>7 days</option><option value="14">14 days</option></select>
+                        <button class="btn-primary" id="agLoginBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div id="agLoginResult"></div>
+            </div>
+
+            <!-- 5. Notes -->
+            <div id="ag-notes" class="ag-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <select id="agNotesSelect" style="min-width:220px;"></select>
+                        <button class="btn-primary" id="agNotesLoadBtn"><i class="fas fa-search"></i> Load Notes</button>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="agNotesLayout">
+                    <div class="card">
+                        <div class="card-header"><h2>Notes</h2></div>
+                        <div id="agNotesList"><p style="color:#94a3b8;padding:20px">Select an agent and click Load</p></div>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin-bottom:16px;">Add Note</h3>
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Type</label>
+                            <select id="agNoteType" style="width:100%;">
+                                <option value="general">General</option>
+                                <option value="coaching">Coaching</option>
+                                <option value="warning">Warning</option>
+                                <option value="achievement">Achievement</option>
+                                <option value="feedback">Feedback</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Note</label>
+                            <textarea id="agNoteContent" rows="4" style="width:100%;padding:10px;border-radius:9px;border:1px solid #cbd5e1;font-size:14px;resize:vertical;" placeholder="Enter note..."></textarea>
+                        </div>
+                        <button class="btn-primary" id="agNoteSaveBtn"><i class="fas fa-save"></i> Save Note</button>
+                        <div id="agNoteSaveMsg" style="margin-top:10px;font-size:13px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Top Performers -->
+            <div id="ag-top" class="ag-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <select id="agTopDays"><option value="7">7 days</option><option value="30" selected>30 days</option></select>
+                        <button class="btn-primary" id="agTopBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>🏆 Top Performers by Call Volume</h2></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Rank</th><th>Agent</th><th>Name</th>
+                                <th class="num">Calls</th><th class="num">Valid</th>
+                                <th class="num">Days Active</th><th class="num">Talk Time</th>
+                                <th class="num">Avg Call</th><th class="num">Min/Day</th>
+                            </tr></thead>
+                            <tbody id="agTopBody"><tr><td colspan="9" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Sales Dashboard -->
+            <div id="ag-sales" class="ag-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <select id="agSalesDays"><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select>
+                        <button class="btn-primary" id="agSalesBtn"><i class="fas fa-search"></i> Load</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>💰 Sales Dashboard</h2><p class="subtitle">Outbound dialer performance per agent</p></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Rank</th><th>Agent</th><th>Name</th>
+                                <th class="num">Dials</th><th class="num">Contacts</th>
+                                <th class="num">Contact %</th><th class="num">Talk Time</th>
+                                <th class="num">Avg Call</th><th class="num">Days</th>
+                            </tr></thead>
+                            <tbody id="agSalesBody"><tr><td colspan="9" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outbound Dialer Monitor -->
+            <div id="ag-outbound" class="ag-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:13px;color:#64748b;">Live outbound agents + last 30 min activity</span>
+                        <button class="btn-primary" onclick="loadOutboundMonitor()"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    </div>
+                </div>
+                <!-- Live agents -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div class="card-header">
+                        <h2>📤 Live Outbound Agents</h2>
+                        <div id="outboundLiveMeta" class="status-pills"></div>
+                    </div>
+                    <div id="outboundLiveGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:4px 0;"></div>
+                </div>
+                <!-- Campaign summary -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div class="card-header"><h2>📊 By Campaign</h2></div>
+                    <div id="outboundCampSummary" style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0;"></div>
+                </div>
+                <!-- Recent activity -->
+                <div class="card">
+                    <div class="card-header"><h2>📋 Recent Activity (Last 30 min)</h2></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Time</th><th>Agent</th><th>Campaign</th>
+                                <th>Phone</th><th class="num">Duration</th><th>Result</th>
+                            </tr></thead>
+                            <tbody id="outboundRecentBody">
+                                <tr><td colspan="6" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Inbound Groups -->
+            <div id="ag-inbound" class="ag-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>📞 Inbound Groups</h2>
+                        <button class="btn-primary" onclick="loadInboundGroups()"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Group ID</th><th>Name</th><th>Active</th>
+                                <th class="num">Calls Today</th><th class="num">Waiting</th><th>Oldest Wait</th>
+                            </tr></thead>
+                            <tbody id="agInboundBody"><tr><td colspan="6" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ AGENT MAPPING PAGE ════════════════════════════ -->
+        <div id="mapping-page" class="page">
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-header">
+                    <div>
+                        <h2>📧 Email Agent Mapping</h2>
+                        <p class="subtitle">Link pinktools agent names to VICIdial usernames</p>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <span id="mappingStats" class="status-pills"></span>
+                        <button class="btn-primary" id="mappingSaveAllBtn"><i class="fas fa-save"></i> Save All</button>
+                    </div>
+                </div>
+                <div id="mappingSaveMsg" style="display:none;margin-bottom:12px;padding:10px 16px;border-radius:8px;font-weight:600;"></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr>
+                            <th>Pinktools Agent Name</th>
+                            <th class="num">Total Emails</th>
+                            <th>Last Active</th>
+                            <th>VICIdial Username</th>
+                            <th>Status</th>
+                        </tr></thead>
+                        <tbody id="mappingTableBody">
+                            <tr><td colspan="5" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ PREDICTIVE ANALYTICS PAGE ════════════════════ -->
+        <div id="forecast-page" class="page">
+            <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+                <button class="tab-pill active" data-ftab="fc-volume">📈 Volume Forecast</button>
+                <button class="tab-pill" data-ftab="fc-staffing">👥 Staffing Recommendations</button>
+            </div>
+
+            <div id="fc-volume" class="fc-section">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <label style="font-weight:600;color:#475569;">Days ahead:</label>
+                        <select id="fcDaysAhead">
+                            <option value="7" selected>7 days</option>
+                            <option value="14">14 days</option>
+                            <option value="30">30 days</option>
+                        </select>
+                        <button class="btn-primary" id="fcVolumeLoadBtn"><i class="fas fa-chart-line"></i> Generate Forecast</button>
+                    </div>
+                </div>
+                <div class="charts-row" style="grid-template-columns:1fr;">
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Call Volume Forecast vs Actuals</h3></div>
+                        <div class="chart-container" style="min-height:300px;"><canvas id="fcVolumeChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px;">
+                    <div class="card-header"><h2>Forecast Details</h2><p class="subtitle" id="fcModelLabel"></p></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Date</th><th>Day</th><th class="num">Predicted Calls</th>
+                                <th class="num">Low</th><th class="num">High</th><th class="num">Rec. Agents</th>
+                            </tr></thead>
+                            <tbody id="fcVolumeBody"><tr><td colspan="6" class="loading-cell">Click Generate Forecast</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fc-staffing" class="fc-section" style="display:none;">
+                <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                        <select id="fcStaffCampaign" style="min-width:180px;"><option value="">All Campaigns</option></select>
+                        <button class="btn-primary" id="fcStaffLoadBtn"><i class="fas fa-users"></i> Load Recommendations</button>
+                    </div>
+                </div>
+                <div class="charts-row" style="grid-template-columns:1fr;">
+                    <div class="chart-card">
+                        <div class="chart-header"><h3>Recommended Agents by Hour</h3></div>
+                        <div class="chart-container" style="min-height:280px;"><canvas id="fcStaffChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:16px;">
+                    <div class="card-header"><h2>Hourly Staffing Plan</h2><p class="subtitle">Based on 14-day avg call volume</p></div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr><th>Hour</th><th class="num">Avg Calls</th><th class="num">Rec. Agents</th></tr></thead>
+                            <tbody id="fcStaffBody"><tr><td colspan="3" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ SCHEDULE PAGE ═════════════════════════════════ -->
+        <div id="schedule-page" class="page">
+            <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+                <button class="tab-pill active" data-schtab="sch-today">📅 Today's Activity</button>
+                <button class="tab-pill" data-schtab="sch-adherence">📊 Adherence (7 Days)</button>
+            </div>
+
+            <div id="sch-today" class="sch-section">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>Today's Agent Activity</h2><p class="subtitle">Login times and talk time from VICIdial agent log</p></div>
+                        <button class="btn-primary" id="schTodayLoadBtn"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Agent</th><th>Name</th><th>First Login</th>
+                                <th>Last Activity</th><th class="num">Talk Time</th><th class="num">Calls</th>
+                            </tr></thead>
+                            <tbody id="schTodayBody"><tr><td colspan="6" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sch-adherence" class="sch-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>Agent Adherence — Last 7 Days</h2><p class="subtitle">Clock-in/out and active hours per day</p></div>
+                        <button class="btn-primary" id="schAdhLoadBtn"><i class="fas fa-rotate-right"></i> Load</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Agent</th><th>Name</th><th>Date</th>
+                                <th>Clock In</th><th>Clock Out</th><th class="num">Active Hours</th>
+                            </tr></thead>
+                            <tbody id="schAdhBody"><tr><td colspan="6" class="loading-cell">Click Load</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ ANOMALY DETECTION PAGE ═════════════════════════ -->
+        <div id="anomaly-page" class="page">
+            <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <label style="font-weight:600;color:#475569;">Window:</label>
+                    <select id="anomalyWindow">
+                        <option value="1" selected>Last 1 hour</option>
+                        <option value="2">Last 2 hours</option>
+                        <option value="4">Last 4 hours</option>
+                    </select>
+                    <button class="btn-primary" id="anomalyRunBtn"><i class="fas fa-magnifying-glass"></i> Detect Anomalies</button>
+                    <span id="anomalyCheckedAt" style="font-size:13px;color:#94a3b8;"></span>
+                </div>
+            </div>
+            <div id="anomalyResults">
+                <div style="text-align:center;padding:60px;color:#94a3b8;">
+                    <i class="fas fa-triangle-exclamation" style="font-size:40px;opacity:.3;display:block;margin-bottom:12px;"></i>
+                    <p>Click Detect Anomalies to scan for issues</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ DID INSPECTOR PAGE ════════════════════════════ -->
+        <div id="dids-page" class="page">
+
+            <!-- Toolbar -->
+            <div class="card" style="margin-bottom:16px;padding:14px 20px;">
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <!-- Search -->
+                    <input type="text" id="didFilterText" placeholder="🔍  Search DID, description, group…"
+                        oninput="didApplyFilters()"
+                        style="flex:1;min-width:200px;padding:8px 14px;border-radius:9px;border:1px solid #e2e8f0;font-size:14px;">
+                    <!-- Status filter -->
+                    <select id="didFilterStatus" onchange="didApplyFilters()" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:13px;font-weight:600;">
+                        <option value="all">All Status</option>
+                        <option value="active">Active Only</option>
+                        <option value="inactive">Inactive Only</option>
+                    </select>
+                    <!-- Calls filter -->
+                    <select id="didFilterCalls" onchange="didApplyFilters()" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:13px;font-weight:600;">
+                        <option value="all">All Volumes</option>
+                        <option value="active_calls">Has Calls</option>
+                        <option value="zero">Zero Calls</option>
+                    </select>
+                    <!-- Period -->
+                    <select id="didPeriod" onchange="fetchDids()" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:13px;font-weight:600;">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                    </select>
+                    <button class="btn-primary" onclick="fetchDids()"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    <button onclick="didExportCSV()" style="padding:8px 14px;border-radius:9px;border:1px solid #e2e8f0;background:white;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-file-csv"></i> CSV</button>
+                </div>
+            </div>
+
+            <!-- KPI pills -->
+            <div id="didKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;"></div>
+
+            <!-- Main table -->
+            <div class="card">
+                <div class="card-header" style="padding-bottom:10px;">
+                    <div><h2>DID Inspector</h2><p class="subtitle" id="didTableSub">Loading…</p></div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table" id="didTable">
+                        <thead><tr>
+                            <th class="did-sort" data-col="did" style="cursor:pointer;">DID ↕</th>
+                            <th class="did-sort" data-col="description" style="cursor:pointer;">Description ↕</th>
+                            <th class="did-sort" data-col="group" style="cursor:pointer;">Group ↕</th>
+                            <th class="did-sort" data-col="route" style="cursor:pointer;">Route ↕</th>
+                            <th class="did-sort" data-col="active" style="cursor:pointer;">Status ↕</th>
+                            <th class="did-sort num" data-col="calls_period" style="cursor:pointer;">Calls ↕</th>
+                            <th class="did-sort num" data-col="avg_talk" style="cursor:pointer;">Avg Talk ↕</th>
+                            <th class="did-sort num" data-col="total_talk_min" style="cursor:pointer;">Total Mins ↕</th>
+                            <th class="did-sort" data-col="last_call" style="cursor:pointer;">Last Call ↕</th>
+                            <th class="did-sort" data-col="modified" style="cursor:pointer;">Modified ↕</th>
+                        </tr></thead>
+                        <tbody id="didAllBody"><tr><td colspan="10" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ QUERY MONITOR PAGE ════════════════════════════ -->
+        <div id="query-monitor-page" class="page">
+            <div class="card" style="margin-bottom:16px;padding:18px 24px;">
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <button class="btn-primary" id="qmRefreshBtn"><i class="fas fa-rotate-right"></i> Refresh</button>
+                    <span id="qmCheckedAt" style="font-size:13px;color:#94a3b8;"></span>
+                </div>
+            </div>
+
+            <div class="kpi-grid" id="qmKpiGrid" style="margin-bottom:20px;"></div>
+
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-header"><h2>Active Queries</h2><p class="subtitle">Non-sleep processes in the DB right now</p></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>ID</th><th>User</th><th>Command</th><th class="num">Time (s)</th><th>State</th><th>Query</th></tr></thead>
+                        <tbody id="qmActiveBody"><tr><td colspan="6" class="loading-cell">Click Refresh</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h2>Table Sizes</h2><p class="subtitle">Key VICIdial tables</p></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Table</th><th class="num">Data (MB)</th><th class="num">Index (MB)</th><th class="num">Rows (est.)</th></tr></thead>
+                        <tbody id="qmTablesBody"><tr><td colspan="4" class="loading-cell">Click Refresh</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ CLIENT QA PACKAGE PAGE ══════════════════════════ -->
+        <div id="qa-package-page" class="page">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <div>
+                    <h1 style="font-size:24px;font-weight:800;color:#0f172a;margin:0;">Client QA Package</h1>
+                    <p style="color:#64748b;margin:4px 0 0;font-size:14px;">Generate client-ready ZIP with PDF reports, MP3 recordings, transcripts &amp; Excel summary</p>
+                </div>
+                <button onclick="loadQaHistory()" style="padding:8px 16px;border-radius:9px;border:1px solid #e2e8f0;background:white;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-history"></i> History</button>
+            </div>
+
+            <!-- Config card -->
+            <div class="card" style="margin-bottom:16px;padding:24px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start;">
+                    <!-- Campaigns -->
+                    <div>
+                        <label style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Campaigns</label>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                            <div style="padding:8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:6px;">
+                                <button onclick="qaSelectAll()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-weight:600;">All</button>
+                                <button onclick="qaSelectNone()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-weight:600;">None</button>
+                            </div>
+                            <div id="qaCampList" style="max-height:200px;overflow-y:auto;padding:8px 12px;"><span style="color:#94a3b8;font-size:13px;">Loading…</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Date</label>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div style="display:flex;gap:6px;">
+                                <button class="apt-preset" onclick="qaDatePreset('yesterday')">Yesterday</button>
+                                <button class="apt-preset" onclick="qaDatePreset('today')">Today</button>
+                            </div>
+                            <input type="date" id="qaDate" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:14px;">
+                        </div>
+                        <div style="margin-top:14px;">
+                            <label style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Recordings per Agent</label>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <input type="number" id="qaNPerAgent" value="3" min="1" max="10" style="width:70px;padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:14px;font-weight:700;">
+                                <span style="font-size:13px;color:#64748b;">recordings per agent (max 10)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info + Run -->
+                    <div>
+                        <div style="background:#f0f4ff;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #c7d2fe;">
+                            <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:8px;"><i class="fas fa-circle-info"></i> What this generates</div>
+                            <ul style="margin:0;padding-left:18px;font-size:12px;color:#4338ca;line-height:1.8;">
+                                <li>AI-scored PDF per call</li>
+                                <li>MP3 recording per call</li>
+                                <li>Full transcript (TXT)</li>
+                                <li>Excel summary with all agents</li>
+                                <li>ZIP package ready to send client</li>
+                            </ul>
+                            <div style="margin-top:10px;font-size:11px;color:#6366f1;font-style:italic;">⏱ Takes 30–90 seconds depending on call count</div>
+                        </div>
+                        <button class="btn-primary" onclick="startQaPackage()" id="qaRunBtn" style="width:100%;padding:13px;font-size:15px;">
+                            <i class="fas fa-box-open"></i> Generate Package
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress card (shown while running) -->
+            <div id="qaProgressCard" style="display:none;" class="card" style="margin-bottom:16px;">
+                <div style="padding:20px 24px;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                        <div id="qaStatusIcon" style="width:36px;height:36px;border-radius:50%;background:#6366f1;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;flex-shrink:0;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <div>
+                            <div id="qaStatusText" style="font-size:15px;font-weight:700;color:#0f172a;">Building package…</div>
+                            <div id="qaStatusSub" style="font-size:12px;color:#94a3b8;margin-top:2px;">This may take 30–90 seconds</div>
+                        </div>
+                    </div>
+                    <!-- Log output -->
+                    <div id="qaLog" style="background:#0f172a;border-radius:10px;padding:14px 16px;max-height:280px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.7;"></div>
+                </div>
+            </div>
+
+            <!-- Result card -->
+            <div id="qaResultCard" style="display:none;" class="card" style="margin-bottom:16px;">
+                <div style="padding:24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                        <div>
+                            <div style="font-size:18px;font-weight:800;color:#22c55e;margin-bottom:4px;"><i class="fas fa-circle-check"></i> Package Complete</div>
+                            <div id="qaResultSub" style="font-size:13px;color:#64748b;"></div>
+                        </div>
+                        <button id="qaDownloadBtn" onclick="qaDownload()" class="btn-primary" style="padding:12px 22px;font-size:14px;">
+                            <i class="fas fa-download"></i> Download ZIP
+                        </button>
+                    </div>
+                    <div id="qaResultKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px;"></div>
+                    <div id="qaResultTable" style=""></div>
+                </div>
+            </div>
+
+            <!-- History card -->
+            <div id="qaHistoryCard" style="display:none;" class="card">
+                <div class="card-header"><h2>Package History</h2><p class="subtitle">Last 30 packages generated</p></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Date</th><th>Campaigns</th><th>Agents</th><th>Calls</th><th>Size</th><th>Status</th><th>File</th></tr></thead>
+                        <tbody id="qaHistoryBody"><tr><td colspan="7" class="loading-cell">Click History to load</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ APT DOWNLOAD PAGE ═════════════════════════════ -->
+        <div id="apt-page" class="page">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <div>
+                    <h1 style="font-size:24px;font-weight:800;color:#0f172a;margin:0;">API Services</h1>
+                    <p style="color:#64748b;margin:4px 0 0;font-size:14px;">Adherence &amp; Performance Tracking · Call Time = Length − Alt Dial</p>
+                </div>
+            </div>
+
+            <!-- Config card -->
+            <div class="card" style="margin-bottom:16px;padding:24px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:start;">
+                    <!-- Campaign selection -->
+                    <div>
+                        <label style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Campaigns</label>
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+                            <div style="padding:8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:6px;">
+                                <button onclick="aptSelectAll()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-weight:600;">All</button>
+                                <button onclick="aptSelectNone()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #cbd5e1;background:white;cursor:pointer;font-weight:600;">None</button>
+                            </div>
+                            <div id="aptCampList" style="max-height:200px;overflow-y:auto;padding:8px 12px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Date Range</label>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div style="display:flex;gap:6px;">
+                                <button class="apt-preset active" onclick="aptPreset('today')">Today</button>
+                                <button class="apt-preset" onclick="aptPreset('yesterday')">Yesterday</button>
+                                <button class="apt-preset" onclick="aptPreset('range')">Custom</button>
+                            </div>
+                            <input type="date" id="aptStartDate" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:14px;">
+                            <input type="date" id="aptEndDate" style="padding:8px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:14px;display:none;">
+                        </div>
+                    </div>
+
+                    <!-- Timezone + Run -->
+                    <div>
+                        <label style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Timezone</label>
+                        <select id="aptTimezone" style="width:100%;padding:9px 12px;border-radius:9px;border:1px solid #e2e8f0;font-size:14px;margin-bottom:16px;">
+                            <option value="EST">EST (Eastern)</option>
+                            <option value="PST">PST (Pacific)</option>
+                        </select>
+                        <button class="btn-primary" onclick="runAptDownload()" id="aptRunBtn" style="width:100%;padding:12px;font-size:15px;">
+                            <i class="fas fa-download"></i> Download &amp; Analyze
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Parameters (collapsible) -->
+            <div class="card" style="margin-bottom:16px;">
+                <div onclick="aptToggleParams()" style="padding:14px 24px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <i class="fas fa-sliders" style="color:#6366f1;"></i>
+                        <span style="font-size:14px;font-weight:700;color:#374151;">Advanced Parameters</span>
+                        <span style="font-size:12px;color:#94a3b8;font-weight:500;">· formula, exclusions, working hours</span>
+                    </div>
+                    <i id="aptParamsChevron" class="fas fa-chevron-down" style="color:#94a3b8;transition:transform .2s;"></i>
+                </div>
+                <div id="aptParamsBody" style="display:none;padding:0 24px 24px;border-top:1px solid #f1f5f9;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;padding-top:20px;">
+
+                        <!-- Formula -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                                <i class="fas fa-function"></i> APT Formula
+                            </div>
+                            <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0;">
+                                <div style="font-family:monospace;font-size:13px;color:#0f172a;font-weight:700;margin-bottom:8px;">
+                                    Call Time = Length − Dispo
+                                </div>
+                                <div style="font-size:12px;color:#64748b;line-height:1.6;">
+                                    <b>Length</b> = <code>length_in_sec</code> from DB<br>
+                                    <b>Dispo</b> = <code>dispo_sec</code> (agent disposition time)<br>
+                                    <b>Result</b> = actual billable talk time
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;">
+                                <label style="font-size:12px;font-weight:700;color:#64748b;display:block;margin-bottom:6px;">Min Call Length to Count</label>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <input type="number" id="aptMinSec" value="5" min="0" max="60" style="width:70px;padding:7px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:14px;font-weight:600;">
+                                    <span style="font-size:13px;color:#64748b;">seconds</span>
+                                </div>
+                                <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Calls shorter than this are counted as abandoned</div>
+                            </div>
+                        </div>
+
+                        <!-- Excluded statuses -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                                <i class="fas fa-ban"></i> Excluded Statuses
+                            </div>
+                            <div style="font-size:12px;color:#64748b;margin-bottom:8px;">Calls with these statuses are removed before analysis:</div>
+                            <div style="display:flex;flex-direction:column;gap:6px;" id="aptExcludeList">
+                                <label class="apt-excl-row"><input type="checkbox" class="apt-excl-cb" value="NA" checked> <span><b>NA</b> — Not Available</span></label>
+                                <label class="apt-excl-row"><input type="checkbox" class="apt-excl-cb" value="AFTHRS" checked> <span><b>AFTHRS</b> — After Hours</span></label>
+                                <label class="apt-excl-row"><input type="checkbox" class="apt-excl-cb" value="DROP" checked> <span><b>DROP</b> — Dropped</span></label>
+                                <label class="apt-excl-row"><input type="checkbox" class="apt-excl-cb" value="QUEUE" checked> <span><b>QUEUE</b> — In Queue</span></label>
+                                <label class="apt-excl-row"><input type="checkbox" class="apt-excl-cb" value="CLOSER" checked> <span><b>CLOSER</b> — Closer (internal)</span></label>
+                                <label class="apt-excl-row"><input type="checkbox" class="apt-excl-cb" value="DISPO" checked> <span><b>DISPO</b> — Disposition</span></label>
+                            </div>
+                            <button onclick="aptResetExclusions()" style="margin-top:10px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;color:#64748b;font-weight:600;">Reset to Default</button>
+                        </div>
+
+                        <!-- Working hours -->
+                        <div>
+                            <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                                <i class="fas fa-clock"></i> Working Hours Filter
+                            </div>
+                            <div style="font-size:12px;color:#64748b;margin-bottom:10px;">Optionally restrict analysis to calls within business hours:</div>
+                            <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+                                <input type="checkbox" id="aptHoursEnable" onchange="aptToggleHours()" style="width:15px;height:15px;accent-color:#6366f1;">
+                                <span style="font-size:13px;font-weight:600;color:#374151;">Enable hours filter</span>
+                            </label>
+                            <div id="aptHoursInputs" style="display:none;background:#f8fafc;border-radius:10px;padding:14px 16px;border:1px solid #e2e8f0;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                    <label style="font-size:12px;color:#64748b;width:40px;">From</label>
+                                    <input type="time" id="aptHoursStart" value="08:00" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;">
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                                    <label style="font-size:12px;color:#64748b;width:40px;">To</label>
+                                    <input type="time" id="aptHoursEnd" value="20:00" style="padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;">
+                                </div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                    <button class="apt-preset" onclick="aptSetHours('08:00','17:00')">Business</button>
+                                    <button class="apt-preset" onclick="aptSetHours('09:00','18:00')">Extended</button>
+                                    <button class="apt-preset" onclick="aptSetHours('00:00','23:59')">All Day</button>
+                                </div>
+                                <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
+                                    Calls outside this window will be flagged as <b>After Hours</b> in the report
+                                </div>
+                            </div>
+                            <div id="aptHoursOff" style="font-size:12px;color:#94a3b8;font-style:italic;">All calls included regardless of time</div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parameters used (shown after run) -->
+            <div id="aptParamsUsed" style="display:none;margin-bottom:16px;"></div>
+
+            <!-- Summary KPIs -->
+            <div id="aptKpis" style="display:none;margin-bottom:20px;"></div>
+
+            <!-- Removed stats -->
+            <div id="aptRemovedCard" style="display:none;" class="card" style="margin-bottom:20px;padding:18px 24px;"></div>
+
+            <!-- Campaign breakdown -->
+            <div id="aptCampBreakdown" style="display:none;" class="card" style="margin-bottom:20px;">
+                <div class="card-header"><h2>Campaign Breakdown</h2></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Campaign</th><th class="num">Calls</th><th class="num">Talk Time</th><th class="num">Call Time</th><th class="num">Avg Call</th></tr></thead>
+                        <tbody id="aptCampBreakBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Individual calls -->
+            <div id="aptCallsCard" style="display:none;" class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <div><h2>Individual Calls</h2><p class="subtitle" id="aptCallsCount"></p></div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn-primary" onclick="aptExportCSV()" id="aptCsvBtn"><i class="fas fa-file-csv"></i> CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrap" style="max-height:500px;overflow-y:auto;">
+                    <table class="data-table">
+                        <thead><tr>
+                            <th>Date/Time (Local)</th><th>Campaign</th><th>Agent</th><th>Phone</th>
+                            <th>Term Reason</th><th class="num">Length</th><th class="num">Talk</th><th class="num">Call Time</th>
+                        </tr></thead>
+                        <tbody id="aptCallsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ══ AI RESULT MODAL ═══════════════════════════════════ -->
+<div id="aiModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.7); backdrop-filter:blur(4px); overflow-y:auto; padding:32px 16px;">
+    <div style="max-width:780px; margin:0 auto; background:white; border-radius:20px; box-shadow:0 25px 60px rgba(0,0,0,0.3); overflow:hidden;">
+
+        <!-- Modal Header -->
+        <div id="aiModalHeader" style="padding:22px 28px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">🤖</div>
+                <div>
+                    <div style="font-size:17px;font-weight:700;color:#0f172a;">AI Scoring Complete</div>
+                    <div id="aiModalSubtitle" style="font-size:12px;color:#64748b;margin-top:2px;"></div>
+                </div>
+            </div>
+            <button onclick="closeAiModal()" style="width:34px;height:34px;border-radius:50%;background:#f1f5f9;border:none;font-size:18px;cursor:pointer;color:#475569;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+
+        <!-- Score banner -->
+        <div id="aiModalBanner" style="padding:24px 28px; border-bottom:1px solid #f1f5f9;"></div>
+
+        <!-- Tabs -->
+        <div style="display:flex; gap:0; border-bottom:2px solid #f1f5f9; padding:0 28px;">
+            <button class="modal-tab active" data-tab="checkpoints" onclick="switchModalTab('checkpoints',this)">📋 Checkpoints</button>
+            <button class="modal-tab" data-tab="transcript" onclick="switchModalTab('transcript',this)">📝 Transcript</button>
+            <button class="modal-tab" data-tab="analysis" onclick="switchModalTab('analysis',this)">🔍 Analysis</button>
+        </div>
+
+        <!-- Tab content -->
+        <div style="padding:24px 28px; min-height:280px;">
+            <div id="tab-checkpoints"></div>
+            <div id="tab-transcript" style="display:none;"></div>
+            <div id="tab-analysis" style="display:none;"></div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:18px 28px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div id="aiModalSaveInfo" style="font-size:14px; color:#22c55e; font-weight:600;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="switchToEvaluations()" class="btn-primary" style="padding:8px 18px; font-size:13px;">
+                    <i class="fas fa-list"></i> View All Evaluations
+                </button>
+                <button onclick="closeAiModal()" style="padding:8px 18px; font-size:13px; background:#f1f5f9; color:#475569; border:none; border-radius:9px; cursor:pointer; font-weight:600;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.camp-row:hover { background: #f0f4ff !important; }
+.camp-row:hover td { background: #f0f4ff; }
+.time-preset {
+    padding: 5px 12px; border-radius: 8px; border: 1px solid #e2e8f0;
+    background: white; font-size: 12px; font-weight: 600; cursor: pointer;
+    color: #64748b; transition: all 0.15s;
+}
+.time-preset:hover { border-color: #6366f1; color: #6366f1; }
+.time-preset.active { background: #6366f1; color: white; border-color: #6366f1; }
+.modal-tab {
+    padding: 12px 20px; background: none; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    color: #64748b; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; transition: all 0.15s;
+}
+.modal-tab:hover { color: #3b82f6; }
+.modal-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+.cp-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 0; border-bottom: 1px solid #f8fafc;
+}
+.cp-row:last-child { border-bottom: none; }
+.cp-label { flex: 1; font-size: 14px; color: #334155; }
+.cp-bar-wrap { width: 120px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; flex-shrink:0; }
+.cp-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.cp-score { font-size: 13px; font-weight: 700; min-width: 52px; text-align: right; flex-shrink:0; }
+.apt-preset {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid #e2e8f0;
+    background: white; font-size: 12px; font-weight: 600; cursor: pointer; color: #64748b;
+    transition: all .15s;
+}
+.apt-preset:hover { border-color: #6366f1; color: #6366f1; }
+.apt-preset.active { background: #6366f1; color: white; border-color: #6366f1; }
+.apt-excl-row {
+    display: flex; align-items: center; gap: 8px; padding: 5px 10px;
+    border-radius: 8px; cursor: pointer; font-size: 13px; color: #374151;
+    transition: background .1s;
+}
+.apt-excl-row:hover { background: #f1f5f9; }
+.apt-excl-row input { width: 14px; height: 14px; accent-color: #6366f1; flex-shrink: 0; }
+</style>
+
+<script src="/static/js/dashboard.js?v=20260616h"></script>
+<script src="/static/js/apt.js?v=20260616b"></script>
+<script src="/static/js/qa_package.js?v=20260616b"></script>
+<!-- ══ CAMPAIGN DETAIL MODAL ══════════════════════════════ -->
+<div id="campDetailModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(15,23,42,0.75);backdrop-filter:blur(4px);overflow-y:auto;padding:32px 16px;">
+    <div style="max-width:900px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 25px 60px rgba(0,0,0,0.3);overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:22px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+            <div>
+                <div id="campDetailTitle" style="font-size:20px;font-weight:800;color:white;"></div>
+                <div id="campDetailSub" style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+                <select id="campDetailDays" style="padding:6px 12px;border-radius:8px;border:none;font-size:13px;font-weight:600;">
+                    <option value="0">Today</option>
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+                <button onclick="closeCampDetail()" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;font-size:18px;cursor:pointer;color:white;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+        </div>
+        <!-- KPI pills -->
+        <div id="campDetailKpis" style="display:flex;gap:12px;flex-wrap:wrap;padding:20px 28px 0;"></div>
+        <!-- Daily summary table -->
+        <div style="padding:16px 28px 8px;">
+            <div style="font-size:13px;font-weight:700;color:#6366f1;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Daily Summary</div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr>
+                        <th>Date</th><th class="num">Calls</th><th class="num">Answered</th>
+                        <th class="num">Ans %</th><th class="num">Abandoned</th><th class="num">Abd %</th>
+                        <th class="num">Avg Talk</th><th class="num">Total Mins</th>
+                    </tr></thead>
+                    <tbody id="campDetailBody"><tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Individual calls table -->
+        <div style="padding:8px 28px 28px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:13px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.05em;">Individual Calls</div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="exportCampCallsCSV()" style="font-size:12px;padding:4px 14px;border-radius:20px;border:1px solid #6366f1;background:white;color:#6366f1;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;">
+                        <i class="fas fa-download"></i> CSV
+                    </button>
+                    <button onclick="exportCampCallsPDF()" style="font-size:12px;padding:4px 14px;border-radius:20px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;">
+                        <i class="fas fa-file-pdf"></i> PDF Report
+                    </button>
+                </div>
+            </div>
+            <div class="table-wrap" style="max-height:420px;overflow-y:auto;">
+                <table class="data-table">
+                    <thead><tr>
+                        <th style="width:32px;text-align:center;">#</th>
+                        <th>Time</th><th>Agent</th><th>Direction</th>
+                        <th>Disposition</th><th class="num">Talk</th><th class="num">Queue</th>
+                    </tr></thead>
+                    <tbody id="campCallsBody"><tr><td colspan="7" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

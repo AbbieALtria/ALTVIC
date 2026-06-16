@@ -1,0 +1,69 @@
+{
+  "goals": {
+    "service_level": {
+      "threshold_seconds": 20,
+      "target_percentage": 80.0,
+      "description": "Percentage of calls answered within threshold seconds"
+    },
+    "abandon_rate": {
+      "max_target": 5.0,
+      "warning_threshold": 8.0,
+      "critical_threshold": 12.0,
+      "description": "Maximum acceptable abandon rate (%)"
+    },
+    "answer_rate": {
+      "min_target": 90.0,
+      "warning_threshold": 85.0,
+      "critical_threshold": 75.0,
+      "description": "Minimum answer rate (%)"
+    },
+    "avg_queue_time": {
+      "max_target": 30.0,
+      "warning_threshold": 45.0,
+      "critical_threshold": 60.0,
+      "description": "Maximum average queue time (seconds)"
+    },
+    "avg_wait_time": {
+      "max_target": 20.0,
+      "warning_threshold": 30.0,
+      "critical_threshold": 45.0,
+      "description": "Maximum average wait time for abandoned calls (seconds)"
+    },
+    "avg_talk_time": {
+      "min_target": 120.0,
+      "max_target": 600.0,
+      "description": "Ideal talk time range (seconds)"
+    },
+    "ghost_call_rate": {
+      "max_target": 10.0,
+      "warning_threshold": 15.0,
+      "critical_threshold": 20.0,
+      "description": "Maximum acceptable ghost call rate (%)"
+    }
+  },
+  "campaign_goals": {
+    "Xshield": {
+      "service_level_target": 85.0,
+      "abandon_target": 4.0,
+      "notes": "Premium support campaign"
+    },
+    "UpliftDeals": {
+      "service_level_target": 75.0,
+      "abandon_target": 8.0,
+      "notes": "High volume sales"
+    },
+    "SAVVYCS": {
+      "service_level_target": 90.0,
+      "abandon_target": 3.0,
+      "notes": "Technical support"
+    }
+  },
+  "scoring": {
+    "excellent": 90,
+    "good": 80,
+    "average": 70,
+    "poor": 50,
+    "critical": 0
+  },
+  "last_updated": "2026-03-07"
+}

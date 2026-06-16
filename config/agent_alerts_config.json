@@ -1,0 +1,29 @@
+{
+  "thresholds": {
+    "acw_warning_minutes": 5,
+    "acw_critical_minutes": 10,
+    "short_call_seconds": 30,
+    "short_call_consecutive": 3,
+    "idle_ready_minutes": 30,
+    "transfers_per_hour": 10,
+    "pause_warning_minutes": 15,
+    "pause_critical_minutes": 30,
+    "wrap_up_warning_minutes": 3,
+    "wrap_up_critical_minutes": 8
+  },
+  "enabled_alerts": {
+    "acw_alert": true,
+    "short_calls_alert": true,
+    "idle_alert": true,
+    "transfer_alert": true,
+    "pause_alert": true,
+    "wrap_up_alert": true
+  },
+  "alert_history": [],
+  "notification": {
+    "email_enabled": false,
+    "email_recipients": [],
+    "slack_enabled": false,
+    "slack_webhook": ""
+  }
+}

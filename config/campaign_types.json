@@ -1,0 +1,41 @@
+{
+  "sales": [
+    "UpliftDeals",
+    "K1",
+    "TikTok",
+    "Zappify",
+    "YPDirect",
+    "Hotpro",
+    "BabiTrump",
+    "Boxco",
+    "Aiven",
+    "NutraPrice",
+    "Revitol",
+    "RealCBDketo"
+  ],
+  "support": [
+    "Xshield",
+    "SAVVYCS",
+    "TodosGamersCS",
+    "DignityBioLabs",
+    "ShopMyHealth",
+    "XCHANGE",
+    "AAASUP",
+    "AGENTDIRECT"
+  ],
+  "leads": [
+    "K1",
+    "MarketNice",
+    "Patriots",
+    "SpireOnlinePrize"
+  ],
+  "other": [
+    "sample",
+    "TEST"
+  ],
+  "classifications": {
+    "default_type": "other",
+    "auto_classify": true,
+    "last_updated": "2026-03-07"
+  }
+}

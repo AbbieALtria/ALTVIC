@@ -1,0 +1,14 @@
+{
+    "sales": {
+        "excellent": 3.0,
+        "good": 1.5
+    },
+    "service": {
+        "excellent": 85,
+        "good": 75
+    },
+    "dials_per_sale": {
+        "excellent": 20,
+        "good": 40
+    }
+}

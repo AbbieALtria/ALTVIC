@@ -1,0 +1,50 @@
+{
+  "health_checks": {
+    "database": {
+      "enabled": true,
+      "timeout_seconds": 5,
+      "warning_threshold_ms": 200,
+      "critical_threshold_ms": 500
+    },
+    "disk_space": {
+      "enabled": true,
+      "warning_threshold_gb": 10,
+      "critical_threshold_gb": 5,
+      "paths": ["/", "/var/lib/mysql", "/var/log"]
+    },
+    "services": {
+      "enabled": true,
+      "services": [
+        "asterisk",
+        "httpd",
+        "mariadb",
+        "vici-dial"
+      ]
+    },
+    "backup": {
+      "enabled": true,
+      "max_age_hours": 24,
+      "backup_paths": ["/var/spool/asterisk/monitor", "/etc/asterisk", "/var/lib/mysql"]
+    },
+    "certificates": {
+      "enabled": true,
+      "warning_days": 30,
+      "critical_days": 7,
+      "cert_paths": ["/etc/ssl/certs", "/etc/asterisk/keys"]
+    }
+  },
+  "alert_thresholds": {
+    "cpu_warning": 80,
+    "cpu_critical": 95,
+    "memory_warning": 85,
+    "memory_critical": 95,
+    "load_warning": 5,
+    "load_critical": 10
+  },
+  "notification_channels": {
+    "dashboard": true,
+    "email": false,
+    "slack": false,
+    "sms": false
+  }
+}
