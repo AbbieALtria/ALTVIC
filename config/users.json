@@ -1,0 +1,17 @@
+{
+  "admin": {
+    "password_hash": "scrypt:32768:8:1$tNufLZfQvLMPCgoU$d0e19e11f192cffe794c2babedfc1b53e5dd025543c5bdfb292245d65aa6399ce59a743bd8e92b7c75b732903124cdace92005ba69af9394532256fcd265aa31",
+    "role": "admin",
+    "display_name": "Administrator"
+  },
+  "manager": {
+    "password_hash": "scrypt:32768:8:1$ivSH3JC4TqvPWUNp$abc72c1f0aa95c63a2c434851548be45515cfc99e29eb0e471f1207e561e183eba66916808b33c52761245ede8934c5036dfddee1d89ec9183b8d1cc0b5927ed",
+    "role": "manager",
+    "display_name": "Manager"
+  },
+  "agent": {
+    "password_hash": "scrypt:32768:8:1$dPKu1ylH0PDU04YO$77b8bd6465855117b28ea2447ee4f66d26628d7a7b5753111ed89381d6494ddec82cbbae63d7dbaf5491ffe48d70b07940809e07428556eaf4f146599cc8fbfe",
+    "role": "agent",
+    "display_name": "Agent"
+  }
+}

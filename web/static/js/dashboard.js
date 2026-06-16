@@ -57,6 +57,21 @@ function currentPage() {
 }
 
 function initNavigation() {
+    // Hide nav items not allowed for this user's role (server injects window.ALTRIA_ALLOWED_PAGES)
+    const allowed = window.ALTRIA_ALLOWED_PAGES || null;
+    let firstAllowedPage = 'dashboard';
+    document.querySelectorAll('.nav-item').forEach((item, idx) => {
+        const page = item.dataset.page;
+        if (allowed && !allowed.includes(page)) {
+            item.style.display = 'none';
+        } else if (idx === 0 || firstAllowedPage === 'dashboard') {
+            // track the first visible item as fallback landing page
+        }
+    });
+    if (allowed && allowed.length && !allowed.includes('dashboard')) {
+        firstAllowedPage = allowed[0];
+    }
+
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', e => {
             e.preventDefault();
@@ -77,8 +92,30 @@ function initNavigation() {
                              'qa-package':'Client QA Package' };
             document.getElementById('pageTitle').textContent = titles[page] || page;
             loadPageData(page, true); // force=true on explicit nav click
+            closeMobileSidebar();
         });
     });
+
+    // If the default "dashboard" page isn't allowed for this role, jump to first allowed page
+    if (allowed && allowed.length && !allowed.includes('dashboard')) {
+        const target = document.querySelector(`.nav-item[data-page="${firstAllowedPage}"]`);
+        if (target) target.click();
+    }
+
+    // ── Mobile hamburger / overlay ──────────────────────────
+    const toggleBtn = document.getElementById('mobileNavToggle');
+    const overlay   = document.getElementById('sidebarOverlay');
+    const sidebar   = document.querySelector('.sidebar');
+    toggleBtn?.addEventListener('click', () => {
+        sidebar?.classList.toggle('open');
+        overlay?.classList.toggle('open');
+    });
+    overlay?.addEventListener('click', closeMobileSidebar);
+}
+
+function closeMobileSidebar() {
+    document.querySelector('.sidebar')?.classList.remove('open');
+    document.getElementById('sidebarOverlay')?.classList.remove('open');
 }
 
 // Pages that should NOT auto-refresh (user controls when to reload)

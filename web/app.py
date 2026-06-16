@@ -7,7 +7,7 @@
 #               All endpoints use live DB data. Email channel integrated.
 # =============================================================================
 
-from flask import Flask, render_template, jsonify, request, send_from_directory, send_file
+from flask import Flask, render_template, jsonify, request, send_from_directory, send_file, redirect, url_for, session
 from flask_cors import CORS
 import sys, os, threading, uuid, json
 from datetime import datetime, timedelta, date as date_type
@@ -20,10 +20,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.database import db
 from utils.colors import Colors, print_color
 from utils.formatter import sec_to_hms, time_ago
+from auth import verify_login, current_user, login_required_guard, ROLE_PAGES, can_write
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'altria-ops-2026-change-in-production')
 CORS(app)
+
+
+@app.before_request
+def _enforce_login():
+    return login_required_guard()
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -59,9 +65,38 @@ def jsonify_err(msg, code=500):
 def serve_static(filename):
     return send_from_directory('static', filename)
 
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        user = verify_login(username, password)
+        if user:
+            session['username']     = user['username']
+            session['role']         = user['role']
+            session['display_name'] = user['display_name']
+            next_url = request.args.get('next') or '/'
+            return redirect(next_url)
+        error = 'Invalid username or password'
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login_page'))
+
 @app.route('/')
 def index():
-    return render_template('dashboard.html')
+    user = current_user()
+    allowed_pages = ROLE_PAGES.get(user['role'], [])
+    return render_template(
+        'dashboard.html',
+        current_user=user,
+        allowed_pages=allowed_pages,
+        allowed_pages_json=json.dumps(allowed_pages),
+        can_write=can_write(),
+    )
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Health

@@ -11,6 +11,7 @@
 </head>
 <body>
 <div class="dashboard">
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <!-- ── Sidebar ────────────────────────────────────────────── -->
     <aside class="sidebar">
@@ -87,13 +88,26 @@
                 <span class="dot" id="emailDot" style="margin-left:10px"></span> Email DB
             </div>
             <div id="serverTime" style="font-size:12px; margin-top:6px; color:#94a3b8;">--:--:--</div>
-            <div style="font-size:11px; color:#475569; margin-top:4px;">© 2026 Altria Ops v2.0</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);">
+                <div style="font-size:12px;color:#cbd5e1;">
+                    <i class="fas fa-circle-user" style="margin-right:5px;color:#94a3b8;"></i>
+                    {{ current_user.display_name }}
+                    <span style="display:block;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-left:18px;">{{ current_user.role }}</span>
+                </div>
+                <a href="/logout" style="font-size:11px;color:#f87171;text-decoration:none;font-weight:700;padding:4px 9px;border:1px solid #ef444433;border-radius:6px;">
+                    <i class="fas fa-arrow-right-from-bracket"></i> Out
+                </a>
+            </div>
+            <div style="font-size:11px; color:#475569; margin-top:8px;">© 2026 Altria Ops v2.0</div>
         </div>
     </aside>
 
     <!-- ── Main ───────────────────────────────────────────────── -->
     <main class="main-content">
         <div class="top-bar">
+            <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Open menu">
+                <i class="fas fa-bars"></i>
+            </button>
             <h1 class="page-title" id="pageTitle">Dashboard</h1>
             <div style="display:flex; gap:10px; align-items:center;">
                 <span id="lastUpdated" style="font-size:13px; color:#94a3b8;">--</span>
@@ -1809,7 +1823,12 @@
 .apt-excl-row input { width: 14px; height: 14px; accent-color: #6366f1; flex-shrink: 0; }
 </style>
 
-<script src="/static/js/dashboard.js?v=20260616h"></script>
+<script>
+    window.ALTRIA_ALLOWED_PAGES = {{ allowed_pages_json|safe }};
+    window.ALTRIA_CAN_WRITE     = {{ 'true' if can_write else 'false' }};
+    window.ALTRIA_ROLE          = "{{ current_user.role }}";
+</script>
+<script src="/static/js/dashboard.js?v=20260616i"></script>
 <script src="/static/js/apt.js?v=20260616b"></script>
 <script src="/static/js/qa_package.js?v=20260616b"></script>
 <!-- ══ CAMPAIGN DETAIL MODAL ══════════════════════════════ -->
