@@ -365,6 +365,7 @@ def campaign_performance():
         campaign   = request.args.get('campaign', '').strip()
         time_start = request.args.get('time_start', '').strip()
         time_end   = request.args.get('time_end', '').strip()
+        exact_date = request.args.get('date', '').strip()  # 'yesterday' or 'YYYY-MM-DD'
         # tz_offset: hours to ADD to call_date before comparing (e.g. -5 = UTC→EST)
         tz_offset  = int(request.args.get('tz_offset', 0))
 
@@ -382,7 +383,12 @@ def campaign_performance():
         def build_where(params):
             ts = _ts_expr()
             clauses = []
-            if days == 0:
+            if exact_date == 'yesterday':
+                clauses.append(f"DATE({ts}) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)")
+            elif exact_date:
+                clauses.append(f"DATE({ts}) = %s")
+                params.append(exact_date)
+            elif days == 0:
                 clauses.append(f"DATE({ts}) = CURDATE()")
             else:
                 clauses.append("call_date >= DATE_SUB(NOW(), INTERVAL %s DAY)")

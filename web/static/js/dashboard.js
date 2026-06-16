@@ -441,6 +441,29 @@ async function fetchCampaignPerformance() {
     } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading-cell" style="color:#ef4444">Error: ${esc(e.message)}</td></tr>`; }
 }
 
+async function fetchCampYesterday() {
+    const tbody  = document.getElementById('campYesterdayTableBody');
+    const totals = document.getElementById('campYesterdayTotals');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>`;
+    try {
+        const res = await apiFetch('/api/campaigns/performance?date=yesterday' + campTimeParams());
+        const campaigns = res.data || [];
+        if (!campaigns.length) { renderCampTable(tbody, [], null, null); return; }
+
+        renderCampTable(tbody, campaigns, null, null);
+
+        if (totals && res.totals) {
+            const t = res.totals;
+            const rc = (r,g,w) => r>=g?'#22c55e':r>=w?'#f59e0b':'#ef4444';
+            totals.innerHTML = `
+                <span class="status-pill">${fmt(t.calls)} total</span>
+                <span class="status-pill" style="color:${rc(t.answer_rate,80,60)}">${t.answer_rate}% ans</span>
+                <span class="status-pill" style="color:${t.abandon_rate>20?'#ef4444':'inherit'}">${t.abandon_rate}% abd</span>`;
+        }
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading-cell" style="color:#ef4444">Error: ${esc(e.message)}</td></tr>`; }
+}
+
 // ── Email Channel ─────────────────────────────────────────
 async function loadEmailPage() {
     const spinner = document.getElementById('emailLoadingSpinner');
@@ -2699,8 +2722,9 @@ let _currentDetailCamp = '';
 function _activeCampDays() {
     // Return the days value matching the currently active campaign tab
     const tab = document.querySelector('.tab-pill[data-ctab].active')?.dataset.ctab;
-    if (tab === 'camp-today')  return 0;
-    if (tab === 'camp-7d')     return 7;
+    if (tab === 'camp-today')     return 0;
+    if (tab === 'camp-yesterday') return 1;
+    if (tab === 'camp-7d')        return 7;
     if (tab === 'camp-30d')    return 30;
     return 30;
 }
@@ -3315,6 +3339,7 @@ function reloadActiveCampTab() {
     const activeTab = document.querySelector('.tab-pill[data-ctab].active')?.dataset.ctab;
     if (!activeTab) return;
     if (activeTab === 'camp-today')         fetchCampaignPerformance();
+    else if (activeTab === 'camp-yesterday') fetchCampYesterday();
     else if (activeTab === 'camp-7d')       fetchCamp7d();
     else if (activeTab === 'camp-30d')      fetchCamp30d();
     else if (activeTab === 'camp-specific') fetchCampSpecific();
@@ -3450,7 +3475,8 @@ document.addEventListener('DOMContentLoaded', () => {
 let campHourlyChart = null;
 
 function onCampTabSwitch(tab) {
-    if      (tab === 'camp-today')    fetchCampaignPerformance();
+    if      (tab === 'camp-today')     fetchCampaignPerformance();
+    else if (tab === 'camp-yesterday') fetchCampYesterday();
     else if (tab === 'camp-7d')       fetchCamp7d();
     else if (tab === 'camp-30d')      fetchCamp30d();
     else if (tab === 'camp-queue')    fetchQueueData();

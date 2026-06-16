@@ -265,6 +265,7 @@
             <!-- Tab bar -->
             <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
                 <button class="tab-pill active" data-ctab="camp-today">📊 Today</button>
+                <button class="tab-pill" data-ctab="camp-yesterday">🌙 Yesterday</button>
                 <button class="tab-pill" data-ctab="camp-7d">📅 Last 7 Days</button>
                 <button class="tab-pill" data-ctab="camp-30d">📆 Last 30 Days</button>
                 <button class="tab-pill" data-ctab="camp-specific">🔍 Specific Campaign</button>
@@ -289,6 +290,28 @@
                                 <th class="num">Abd %</th><th class="num">Avg Talk</th><th class="num">Last Call</th>
                             </tr></thead>
                             <tbody id="campaignsTableBody">
+                                <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yesterday's Performance -->
+            <div id="camp-yesterday" class="camp-section" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h2>Campaign Performance — Yesterday</h2><p class="subtitle">Full-day metrics by campaign</p></div>
+                        <div id="campYesterdayTotals" class="status-pills"></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead><tr>
+                                <th>Campaign</th><th class="num">Calls</th><th class="num">Answered</th>
+                                <th class="num">Ans %</th><th class="num">Abandoned</th>
+                                <th class="num">Abd %</th><th class="num">Avg Talk</th><th class="num">Last Call</th>
+                            </tr></thead>
+                            <tbody id="campYesterdayTableBody">
                                 <tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
                             </tbody>
                         </table>
