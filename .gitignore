@@ -48,6 +48,7 @@ recordings/
 *.jpeg
 *.txt
 !requirements.txt
+!web/static/icons/*.png
 
 # Backup/scratch copies
 *main - Copy*.py

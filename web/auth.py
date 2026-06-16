@@ -122,7 +122,7 @@ def current_user():
 
 
 # Routes that don't require login
-PUBLIC_PATHS = {'/login', '/logout', '/api/health'}
+PUBLIC_PATHS = {'/login', '/logout', '/api/health', '/manifest.json', '/sw.js'}
 
 
 def is_public(path):

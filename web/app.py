@@ -68,6 +68,17 @@ def jsonify_err(msg, code=500):
 def serve_static(filename):
     return send_from_directory('static', filename)
 
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json', mimetype='application/manifest+json')
+
+@app.route('/sw.js')
+def service_worker():
+    # Must be served from root scope (not /static/...) so it can control the whole app
+    resp = send_from_directory('static', 'sw.js', mimetype='application/javascript')
+    resp.headers['Service-Worker-Allowed'] = '/'
+    return resp
+
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
     error = None
