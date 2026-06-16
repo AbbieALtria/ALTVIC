@@ -20,7 +20,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.database import db
 from utils.colors import Colors, print_color
 from utils.formatter import sec_to_hms, time_ago
-from auth import verify_login, current_user, login_required_guard, ROLE_PAGES, can_write
+from auth import (
+    verify_login, current_user, login_required_guard, ROLE_PAGES, can_write,
+    role_required, list_users, create_user, update_user, delete_user, VALID_ROLES,
+)
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'altria-ops-2026-change-in-production')
@@ -97,6 +100,64 @@ def index():
         allowed_pages_json=json.dumps(allowed_pages),
         can_write=can_write(),
     )
+
+# ──────────────────────────────────────────────────────────────────────────────
+# User Management (admin only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+@app.route('/api/admin/users', methods=['GET'])
+@role_required('admin')
+def admin_list_users():
+    return jsonify({'success': True, 'users': list_users(), 'roles': sorted(VALID_ROLES)})
+
+@app.route('/api/admin/users', methods=['POST'])
+@role_required('admin')
+def admin_create_user():
+    data = request.get_json(silent=True) or {}
+    try:
+        create_user(
+            username=data.get('username', ''),
+            password=data.get('password', ''),
+            role=data.get('role', ''),
+            display_name=data.get('display_name', ''),
+        )
+        return jsonify({'success': True})
+    except ValueError as e:
+        return jsonify_err(str(e), 400)
+
+@app.route('/api/admin/users/<username>', methods=['PUT'])
+@role_required('admin')
+def admin_update_user(username):
+    data = request.get_json(silent=True) or {}
+    try:
+        update_user(
+            username,
+            role=data.get('role'),
+            display_name=data.get('display_name'),
+            password=data.get('password') or None,
+        )
+        # Keep the editing admin's own session in sync if they changed their own account
+        me = current_user()
+        if me and me['username'] == username:
+            if data.get('role'):
+                session['role'] = data['role']
+            if data.get('display_name'):
+                session['display_name'] = data['display_name']
+        return jsonify({'success': True})
+    except ValueError as e:
+        return jsonify_err(str(e), 400)
+
+@app.route('/api/admin/users/<username>', methods=['DELETE'])
+@role_required('admin')
+def admin_delete_user(username):
+    me = current_user()
+    if me and me['username'] == username:
+        return jsonify_err('You cannot delete your own account while logged in as it', 400)
+    try:
+        delete_user(username)
+        return jsonify({'success': True})
+    except ValueError as e:
+        return jsonify_err(str(e), 400)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Health

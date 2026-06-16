@@ -89,7 +89,7 @@ function initNavigation() {
                              forecast:'Predictive Analytics', schedule:'Schedule',
                              anomaly:'Anomaly Detection', dids:'DID Inspector',
                              'query-monitor':'Query Monitor', apt:'API Services',
-                             'qa-package':'Client QA Package' };
+                             'qa-package':'Client QA Package', 'user-mgmt':'User Management' };
             document.getElementById('pageTitle').textContent = titles[page] || page;
             loadPageData(page, true); // force=true on explicit nav click
             closeMobileSidebar();
@@ -119,7 +119,7 @@ function closeMobileSidebar() {
 }
 
 // Pages that should NOT auto-refresh (user controls when to reload)
-const MANUAL_PAGES = new Set(['reports', 'vicidial-reports', 'quality', 'mapping', 'email', 'agent-mgmt', 'forecast', 'schedule', 'dids', 'query-monitor']);
+const MANUAL_PAGES = new Set(['reports', 'vicidial-reports', 'quality', 'mapping', 'email', 'agent-mgmt', 'forecast', 'schedule', 'dids', 'query-monitor', 'user-mgmt']);
 
 function loadPageData(page, force = false) {
     // For manual pages, only load on explicit navigation (not auto-refresh or visibility change)
@@ -141,6 +141,7 @@ function loadPageData(page, force = false) {
         case 'anomaly':          runAnomalyDetect(); break;
         case 'dids':             fetchDids(); break;
         case 'query-monitor':    loadQueryMonitor(); break;
+        case 'user-mgmt':        loadUserMgmtPage(); break;
     }
     document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }

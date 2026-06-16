@@ -80,6 +80,9 @@
                 <i class="fas fa-link"></i> Agent Mapping
                 <span class="nav-badge" id="mappingBadge" style="display:none">!</span>
             </a>
+            <a href="#" class="nav-item" data-page="user-mgmt">
+                <i class="fas fa-user-shield"></i> User Management
+            </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -1214,6 +1217,57 @@
             </div>
         </div>
 
+        <!-- ══ USER MANAGEMENT PAGE (admin only) ════════════ -->
+        <div id="user-mgmt-page" class="page">
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-header">
+                    <div>
+                        <h2><i class="fas fa-user-shield"></i> User Management</h2>
+                        <p class="subtitle">Create, edit, or remove dashboard accounts and roles</p>
+                    </div>
+                    <button class="btn-primary" id="umAddUserBtn"><i class="fas fa-user-plus"></i> Add User</button>
+                </div>
+                <div id="umMsg" style="display:none;margin-bottom:14px;padding:10px 16px;border-radius:8px;font-weight:600;font-size:13px;"></div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr>
+                            <th>Username</th><th>Display Name</th><th>Role</th><th style="width:160px;">Actions</th>
+                        </tr></thead>
+                        <tbody id="umTableBody">
+                            <tr><td colspan="4" class="loading-cell"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- User add/edit modal -->
+        <div id="umModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(15,23,42,0.75);backdrop-filter:blur(4px);overflow-y:auto;padding:32px 16px;">
+            <div style="max-width:420px;margin:0 auto;background:white;border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,0.3);overflow:hidden;">
+                <div style="padding:18px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                    <div id="umModalTitle" style="font-size:16px;font-weight:800;color:white;">Add User</div>
+                    <button onclick="umCloseModal()" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">✕</button>
+                </div>
+                <div style="padding:22px 24px;">
+                    <input type="hidden" id="umEditUsername">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="umUsername" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:14px;font-size:14px;" autocapitalize="none">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" id="umDisplayName" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:14px;font-size:14px;">
+                    <label class="form-label">Role</label>
+                    <select id="umRole" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:14px;font-size:14px;">
+                        <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="agent">Agent</option>
+                    </select>
+                    <label class="form-label" id="umPasswordLabel">Password</label>
+                    <input type="password" id="umPassword" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #cbd5e1;margin-bottom:6px;font-size:14px;" autocomplete="new-password">
+                    <div id="umPasswordHint" style="font-size:11px;color:#94a3b8;margin-bottom:16px;">Leave blank to keep the current password</div>
+                    <button class="btn-primary" id="umSaveBtn" style="width:100%;" onclick="umSaveUser()"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ══ PREDICTIVE ANALYTICS PAGE ════════════════════ -->
         <div id="forecast-page" class="page">
             <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
@@ -1828,9 +1882,10 @@
     window.ALTRIA_CAN_WRITE     = {{ 'true' if can_write else 'false' }};
     window.ALTRIA_ROLE          = "{{ current_user.role }}";
 </script>
-<script src="/static/js/dashboard.js?v=20260616i"></script>
+<script src="/static/js/dashboard.js?v=20260616j"></script>
 <script src="/static/js/apt.js?v=20260616b"></script>
 <script src="/static/js/qa_package.js?v=20260616b"></script>
+<script src="/static/js/user_mgmt.js?v=20260616a"></script>
 <!-- ══ CAMPAIGN DETAIL MODAL ══════════════════════════════ -->
 <div id="campDetailModal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(15,23,42,0.75);backdrop-filter:blur(4px);overflow-y:auto;padding:32px 16px;">
     <div style="max-width:900px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 25px 60px rgba(0,0,0,0.3);overflow:hidden;">
