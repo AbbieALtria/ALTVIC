@@ -3172,6 +3172,15 @@ function fmt(n)  { return n != null ? Number(n).toLocaleString() : '0'; }
 function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toDateStr(d) { return d.toISOString().slice(0,10); }
 
+// Eye-icon toggle for password fields (login form, user mgmt modal, etc.)
+function togglePw(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.innerHTML = showing ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+}
+
 window.addEventListener('resize', () => {
     [volumeChart, statusChart, weekChart, emailTrendChart, emailTypeChart].forEach(c => c?.resize());
 });
