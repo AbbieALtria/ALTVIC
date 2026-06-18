@@ -448,3 +448,15 @@ select:focus, input[type="date"]:focus { outline: none; border-color: #3b82f6; }
     .eod-kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .eod-btn span { display: none; }
 }
+
+/* ── Agent Drill-down ────────────────────────────────────── */
+.ag-perf-row:hover { background: #f8fafc !important; }
+.ag-perf-row:hover td:last-child span { color: #6366f1 !important; }
+
+.ag-drill-tab {
+    padding: 6px 16px; border-radius: 8px; border: 1px solid #e2e8f0;
+    background: white; color: #64748b; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+}
+.ag-drill-tab:hover  { border-color: #6366f1; color: #6366f1; }
+.ag-drill-tab.active { background: #6366f1; border-color: #6366f1; color: white; }

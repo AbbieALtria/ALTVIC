@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/static/css/style.css?v=20260618a">
+    <link rel="stylesheet" href="/static/css/style.css?v=20260618b">
 </head>
 <body>
 <div class="dashboard">
@@ -1035,7 +1035,7 @@
             <div id="ag-performance" class="ag-section" style="display:none;">
                 <div class="card" style="margin-bottom:16px;padding:18px 24px;">
                     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                        <select id="agPerfDays"><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select>
+                        <select id="agPerfDays"><option value="0">Today</option><option value="7" selected>7 days</option><option value="14">14 days</option><option value="30">30 days</option></select>
                         <select id="agPerfCampaign" style="min-width:160px;"><option value="">All Campaigns</option></select>
                         <button class="btn-primary" id="agPerfBtn"><i class="fas fa-search"></i> Load</button>
                     </div>
@@ -1052,6 +1052,31 @@
                             </tr></thead>
                             <tbody id="agPerfBody"><tr><td colspan="8" class="loading-cell">Click Load</td></tr></tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Agent Drill-down Panel -->
+                <div id="agDrillPanel" style="display:none;margin-top:16px;">
+                    <div class="card" style="border-left:4px solid #6366f1;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                            <div>
+                                <div id="agDrillName" style="font-size:20px;font-weight:800;color:#0f172a"></div>
+                                <div id="agDrillMeta" style="font-size:13px;color:#64748b;margin-top:3px"></div>
+                            </div>
+                            <button onclick="document.getElementById('agDrillPanel').style.display='none'"
+                                style="padding:6px 14px;border:1px solid #e2e8f0;border-radius:8px;background:white;color:#64748b;cursor:pointer;font-size:13px;">
+                                ✕ Close
+                            </button>
+                        </div>
+                        <!-- KPI summary -->
+                        <div id="agDrillKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px;"></div>
+                        <!-- Tabs -->
+                        <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #f1f5f9;padding-bottom:8px;">
+                            <button class="ag-drill-tab active" onclick="showDrillTab('daily',this)">📅 Daily</button>
+                            <button class="ag-drill-tab" onclick="showDrillTab('campaigns',this)">📣 Campaigns</button>
+                            <button class="ag-drill-tab" onclick="showDrillTab('calls',this)">📞 Recent Calls</button>
+                        </div>
+                        <div id="agDrillContent"></div>
                     </div>
                 </div>
             </div>
@@ -1927,7 +1952,7 @@
         });
     }
 </script>
-<script src="/static/js/dashboard.js?v=20260618a"></script>
+<script src="/static/js/dashboard.js?v=20260618b"></script>
 <script src="/static/js/apt.js?v=20260616b"></script>
 <script src="/static/js/qa_package.js?v=20260616b"></script>
 <script src="/static/js/user_mgmt.js?v=20260616a"></script>

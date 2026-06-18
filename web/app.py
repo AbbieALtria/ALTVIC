@@ -1438,12 +1438,21 @@ def agent_lookup(username):
 
 @app.route('/api/agents/performance')
 def agents_performance():
-    """Agent performance for a period. ?days=7&campaign="""
+    """Agent performance for a period. ?days=7&campaign= (days=0 = today only)"""
     try:
         days     = int(request.args.get('days', 7))
         campaign = request.args.get('campaign','')
         camp_filter = " AND c.campaign_id=%s" if campaign else ""
         camp_params = [campaign] if campaign else []
+
+        if days == 0:
+            date_clause_c = "DATE(c.call_date) = CURDATE()"
+            date_clause_a = "DATE(a.event_time) = CURDATE()"
+            date_params   = []
+        else:
+            date_clause_c = "c.call_date >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+            date_clause_a = "a.event_time >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+            date_params   = [days]
 
         rows = db.execute_query(
             "SELECT a.user, u.full_name,"
@@ -1455,11 +1464,11 @@ def agents_performance():
             " FROM vicidial_agent_log a"
             " LEFT JOIN vicidial_users u ON a.user=u.user"
             " LEFT JOIN vicidial_closer_log c ON a.uniqueid=c.uniqueid"
-            "  AND c.call_date >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+            f"  AND {date_clause_c}"
             + camp_filter +
-            " WHERE a.event_time >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+            f" WHERE {date_clause_a}"
             " GROUP BY a.user ORDER BY calls DESC LIMIT 30",
-            [days] + camp_params + [days]) or []
+            date_params + camp_params + date_params) or []
 
         return jsonify_ok({'data': [{'user':r['user'],
             'name': r.get('full_name') or r['user'],
@@ -1470,6 +1479,100 @@ def agents_performance():
             'avg_call': sec_to_hms(safe_int(r['avg_talk'])),
             'minutes': round(safe_int(r['talk_sec'])/60, 1)} for r in rows],
             'period': days})
+    except Exception as e:
+        return jsonify_err(e)
+
+
+@app.route('/api/agents/detail/<username>')
+def agent_detail(username):
+    """Deep drill-down for one agent. ?days=7 (0=today)"""
+    try:
+        days = int(request.args.get('days', 7))
+        if days == 0:
+            date_clause = "DATE(call_date) = CURDATE()"
+            date_params = []
+            period_label = 'Today'
+        else:
+            date_clause = "call_date >= DATE_SUB(NOW(), INTERVAL %s DAY)"
+            date_params = [days]
+            period_label = f'Last {days} days'
+
+        # Daily breakdown
+        daily = db.execute_query(
+            f"SELECT DATE(call_date) AS day,"
+            f" COUNT(*) AS calls,"
+            f" SUM(CASE WHEN length_in_sec>=5 THEN 1 ELSE 0 END) AS valid,"
+            f" SUM(length_in_sec) AS talk_sec,"
+            f" AVG(CASE WHEN length_in_sec>=5 THEN length_in_sec END) AS avg_talk"
+            f" FROM vicidial_closer_log c"
+            f" JOIN vicidial_agent_log a ON c.uniqueid=a.uniqueid AND a.user=%s"
+            f" WHERE {date_clause}"
+            f" GROUP BY DATE(call_date) ORDER BY day DESC",
+            [username] + date_params) or []
+
+        # Campaign breakdown
+        campaigns = db.execute_query(
+            f"SELECT c.campaign_id,"
+            f" COUNT(*) AS calls,"
+            f" SUM(CASE WHEN c.length_in_sec>=5 THEN 1 ELSE 0 END) AS valid,"
+            f" SUM(c.length_in_sec) AS talk_sec,"
+            f" AVG(CASE WHEN c.length_in_sec>=5 THEN c.length_in_sec END) AS avg_talk,"
+            f" SUM(CASE WHEN c.term_reason IN ('ABANDON','QUEUETIMEOUT','NOAGENT') THEN 1 ELSE 0 END) AS abandoned"
+            f" FROM vicidial_closer_log c"
+            f" JOIN vicidial_agent_log a ON c.uniqueid=a.uniqueid AND a.user=%s"
+            f" WHERE {date_clause}"
+            f" GROUP BY c.campaign_id ORDER BY calls DESC",
+            [username] + date_params) or []
+
+        # Recent calls (last 50)
+        calls = db.execute_query(
+            f"SELECT c.call_date, c.campaign_id, c.phone_number, c.length_in_sec,"
+            f" c.term_reason, c.uniqueid"
+            f" FROM vicidial_closer_log c"
+            f" JOIN vicidial_agent_log a ON c.uniqueid=a.uniqueid AND a.user=%s"
+            f" WHERE {date_clause}"
+            f" ORDER BY c.call_date DESC LIMIT 50",
+            [username] + date_params) or []
+
+        # Agent info
+        info_row = db.execute_query(
+            "SELECT user, full_name, user_group, email FROM vicidial_users WHERE user=%s",
+            [username]) or []
+        info = info_row[0] if info_row else {}
+
+        ttalk = sum(safe_int(r['talk_sec']) for r in daily)
+        tcalls = sum(safe_int(r['calls']) for r in daily)
+        tvalid = sum(safe_int(r['valid']) for r in daily)
+
+        return jsonify_ok({'data': {
+            'user': username,
+            'name': info.get('full_name') or username,
+            'group': info.get('user_group',''),
+            'email': info.get('email',''),
+            'period': period_label,
+            'summary': {
+                'calls': tcalls, 'valid': tvalid,
+                'talk_time': sec_to_hms(ttalk),
+                'minutes': round(ttalk/60, 1),
+                'days_active': len(daily)
+            },
+            'daily': [{'date': str(r['day']), 'calls': safe_int(r['calls']),
+                        'valid': safe_int(r['valid']),
+                        'talk_time': sec_to_hms(safe_int(r['talk_sec'])),
+                        'avg_talk': sec_to_hms(safe_int(r['avg_talk'])),
+                        'minutes': round(safe_int(r['talk_sec'])/60, 1)} for r in daily],
+            'campaigns': [{'campaign': r['campaign_id'], 'calls': safe_int(r['calls']),
+                            'valid': safe_int(r['valid']),
+                            'talk_time': sec_to_hms(safe_int(r['talk_sec'])),
+                            'avg_talk': sec_to_hms(safe_int(r['avg_talk'])),
+                            'abandoned': safe_int(r['abandoned']),
+                            'minutes': round(safe_int(r['talk_sec'])/60, 1)} for r in campaigns],
+            'calls': [{'time': str(r['call_date']), 'campaign': r['campaign_id'],
+                        'phone': r.get('phone_number',''),
+                        'duration': sec_to_hms(safe_int(r['length_in_sec'])),
+                        'duration_sec': safe_int(r['length_in_sec']),
+                        'term_reason': r.get('term_reason','')} for r in calls]
+        }})
     except Exception as e:
         return jsonify_err(e)
 

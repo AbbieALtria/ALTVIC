@@ -2097,28 +2097,153 @@ async function loadAgentLookup() {
 }
 
 // ── 2. Agent Performance ──────────────────────────────────
+let _agPerfDays = 7;
+
 async function loadAgentPerformance() {
-    const days     = document.getElementById('agPerfDays')?.value || 7;
+    _agPerfDays = document.getElementById('agPerfDays')?.value ?? 7;
     const campaign = document.getElementById('agPerfCampaign')?.value || '';
     const tbody    = document.getElementById('agPerfBody');
     const meta     = document.getElementById('agPerfMeta');
     if (!tbody) return;
+    // Hide drill-down when reloading list
+    document.getElementById('agDrillPanel').style.display = 'none';
     tbody.innerHTML = `<tr><td colspan="8" class="loading-cell"><i class="fas fa-spinner fa-spin"></i></td></tr>`;
     try {
-        const res = await apiFetch(`/api/agents/performance?days=${days}&campaign=${campaign}`);
-        if (meta) meta.innerHTML = `<span class="status-pill">${res.data.length} agents · ${days} days</span>`;
-        const medals = ['🥇','🥈','🥉'];
-        tbody.innerHTML = res.data.map((a,i) => `<tr>
-            <td style="font-weight:600">${esc(a.user)}</td>
-            <td>${esc(a.name)}</td>
+        const res = await apiFetch(`/api/agents/performance?days=${_agPerfDays}&campaign=${campaign}`);
+        const label = _agPerfDays == 0 ? 'Today' : `${_agPerfDays} days`;
+        if (meta) meta.innerHTML = `<span class="status-pill">${res.data.length} agents · ${label}</span>`;
+        tbody.innerHTML = res.data.map((a,i) => `<tr class="ag-perf-row" onclick="loadAgentDrill('${esc(a.user)}','${esc(a.name)}')" style="cursor:pointer;" title="Click to view ${esc(a.name)} details">
+            <td style="font-weight:700;color:#6366f1">${esc(a.user)}</td>
+            <td style="font-weight:600">${esc(a.name)}</td>
             <td class="num">${fmt(a.calls)}</td>
             <td class="num">${fmt(a.valid)}</td>
             <td class="num">${a.days_active}</td>
             <td class="num">${a.talk_time}</td>
             <td class="num">${a.avg_call}</td>
-            <td class="num" style="font-weight:700;color:#6366f1">${a.minutes}</td>
+            <td class="num" style="font-weight:700;color:#6366f1">${a.minutes}
+              <span style="font-size:10px;color:#94a3b8;margin-left:4px">▶</span></td>
         </tr>`).join('') || `<tr><td colspan="8" class="loading-cell">No data</td></tr>`;
     } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading-cell" style="color:#ef4444">${esc(e.message)}</td></tr>`; }
+}
+
+// ── Agent Drill-down ──────────────────────────────────────
+let _drillData = null;
+
+async function loadAgentDrill(username, name) {
+    const panel = document.getElementById('agDrillPanel');
+    const kpis  = document.getElementById('agDrillKpis');
+    const cont  = document.getElementById('agDrillContent');
+    document.getElementById('agDrillName').textContent = name || username;
+    document.getElementById('agDrillMeta').textContent = `@${username}`;
+    kpis.innerHTML  = `<div class="loading-cell" style="grid-column:1/-1"><i class="fas fa-spinner fa-spin"></i></div>`;
+    cont.innerHTML  = '';
+    panel.style.display = 'block';
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+
+    // Highlight selected row
+    document.querySelectorAll('.ag-perf-row').forEach(r => r.style.background = '');
+    document.querySelectorAll('.ag-perf-row').forEach(r => {
+        if (r.cells[0]?.textContent === username) r.style.background = '#eff6ff';
+    });
+
+    try {
+        const res = await apiFetch(`/api/agents/detail/${encodeURIComponent(username)}?days=${_agPerfDays}`);
+        _drillData = res.data;
+        const s = res.data.summary;
+        document.getElementById('agDrillMeta').textContent = `@${username} · ${res.data.group || ''} · ${res.data.period}`;
+
+        kpis.innerHTML = [
+            ['Total Calls',  s.calls,    '#0f172a'],
+            ['Valid Calls',  s.valid,     '#3b82f6'],
+            ['Talk Time',    s.talk_time, '#6366f1'],
+            ['Minutes',      s.minutes,   '#6366f1'],
+            ['Days Active',  s.days_active,'#f59e0b'],
+        ].map(([label, val, color]) => `
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b">${label}</div>
+                <div style="font-size:26px;font-weight:800;color:${color};margin:4px 0">${val}</div>
+            </div>`).join('');
+
+        // Show daily tab by default
+        showDrillTab('daily', document.querySelector('.ag-drill-tab.active'));
+    } catch(e) {
+        kpis.innerHTML = `<div style="color:#ef4444;grid-column:1/-1">Error: ${esc(e.message)}</div>`;
+    }
+}
+
+function showDrillTab(tab, btn) {
+    document.querySelectorAll('.ag-drill-tab').forEach(b => b.classList.remove('active'));
+    btn?.classList.add('active');
+    const d = _drillData;
+    if (!d) return;
+    const cont = document.getElementById('agDrillContent');
+
+    if (tab === 'daily') {
+        if (!d.daily?.length) { cont.innerHTML = '<p style="color:#94a3b8;padding:20px">No daily data</p>'; return; }
+        const maxMins = Math.max(...d.daily.map(r=>r.minutes), 1);
+        cont.innerHTML = `<div style="overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th class="num">Calls</th><th class="num">Valid</th>
+            <th class="num">Talk Time</th><th class="num">Avg Call</th>
+            <th style="min-width:160px">Minutes</th></tr></thead>
+          <tbody>${d.daily.map(r => `<tr>
+            <td style="font-weight:600">${r.date}</td>
+            <td class="num">${fmt(r.calls)}</td>
+            <td class="num">${fmt(r.valid)}</td>
+            <td class="num">${r.talk_time}</td>
+            <td class="num">${r.avg_talk}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden">
+                  <div style="width:${Math.round(r.minutes/maxMins*100)}%;height:100%;background:#6366f1;border-radius:4px"></div>
+                </div>
+                <span style="font-weight:700;color:#6366f1;min-width:36px;text-align:right">${r.minutes}</span>
+              </div>
+            </td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    } else if (tab === 'campaigns') {
+        if (!d.campaigns?.length) { cont.innerHTML = '<p style="color:#94a3b8;padding:20px">No campaign data</p>'; return; }
+        cont.innerHTML = `<div style="overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0">
+        <table class="data-table">
+          <thead><tr><th>Campaign</th><th class="num">Calls</th><th class="num">Valid</th>
+            <th class="num">Abandoned</th><th class="num">Talk Time</th>
+            <th class="num">Avg Call</th><th class="num">Minutes</th></tr></thead>
+          <tbody>${d.campaigns.map(c => `<tr>
+            <td><span style="background:#eff6ff;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${esc(c.campaign)}</span></td>
+            <td class="num" style="font-weight:600">${fmt(c.calls)}</td>
+            <td class="num">${fmt(c.valid)}</td>
+            <td class="num" style="color:${c.abandoned>0?'#ef4444':'#94a3b8'}">${c.abandoned}</td>
+            <td class="num">${c.talk_time}</td>
+            <td class="num">${c.avg_talk}</td>
+            <td class="num" style="font-weight:700;color:#6366f1">${c.minutes}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+
+    } else if (tab === 'calls') {
+        if (!d.calls?.length) { cont.innerHTML = '<p style="color:#94a3b8;padding:20px">No recent calls</p>'; return; }
+        const ABANDON_DISPS = ['ABANDON','QUEUETIMEOUT','NOAGENT'];
+        cont.innerHTML = `<div style="overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0">
+        <table class="data-table">
+          <thead><tr><th class="num">#</th><th>Time</th><th>Campaign</th>
+            <th>Phone</th><th class="num">Duration</th><th>Status</th></tr></thead>
+          <tbody>${d.calls.map((c,i) => {
+            const isAband = ABANDON_DISPS.includes(c.term_reason);
+            const isShort = c.duration_sec < 30 && c.duration_sec > 0;
+            const statusColor = isAband ? '#ef4444' : c.duration_sec >= 5 ? '#22c55e' : '#94a3b8';
+            const statusLabel = isAband ? 'Abandoned' : c.duration_sec >= 5 ? 'Answered' : 'Short';
+            return `<tr style="${isShort&&!isAband?'background:#fffbeb':''};border-bottom:1px solid #f1f5f9">
+              <td class="num" style="color:#94a3b8;font-size:12px">${i+1}</td>
+              <td style="font-size:12px;color:#64748b">${c.time.slice(0,16)}</td>
+              <td><span style="background:#eff6ff;color:#1d4ed8;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:600">${esc(c.campaign)}</span></td>
+              <td style="font-family:monospace;font-size:12px">${esc(c.phone)}</td>
+              <td class="num" style="font-weight:600;color:${isAband?'#ef4444':'#0f172a'}">${c.duration}</td>
+              <td><span style="background:${statusColor}18;color:${statusColor};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">${statusLabel}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
+    }
 }
 
 // ── 3. Real-time ──────────────────────────────────────────
