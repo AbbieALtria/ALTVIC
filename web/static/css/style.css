@@ -378,3 +378,73 @@ select:focus, input[type="date"]:focus { outline: none; border-color: #3b82f6; }
     .sidebar, .btn-refresh, .btn-primary, .tab-pills { display: none !important; }
     .main-content { margin-left: 0; }
 }
+
+/* ── EOD Report ──────────────────────────────────────────── */
+.eod-report-wrap { padding: 4px 0; }
+
+.eod-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+    color: white; padding: 24px 28px; border-radius: 14px;
+}
+.eod-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.eod-meta  { font-size: 13px; opacity: .85; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+.eod-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+}
+.eod-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.eod-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s;
+}
+.eod-btn-outline { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); }
+.eod-btn-outline:hover { background: rgba(255,255,255,0.25); }
+.eod-btn-primary { background: white; color: #6366f1; }
+.eod-btn-primary:hover { background: #f0f0ff; }
+
+.eod-kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; margin-bottom: 24px;
+}
+.eod-kpi {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 18px; text-align: center;
+}
+.eod-kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; }
+.eod-kpi-val   { font-size: 32px; font-weight: 800; margin: 6px 0; line-height: 1; }
+.eod-kpi-sub   { font-size: 12px; font-weight: 500; }
+
+.eod-section { margin-bottom: 28px; }
+.eod-section-title {
+    font-size: 15px; font-weight: 700; color: #0f172a;
+    margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9;
+}
+
+.eod-quality-row { display: flex; flex-direction: column; gap: 10px; }
+.eod-quality-item { display: flex; align-items: center; gap: 12px; }
+.eod-quality-label { font-size: 13px; font-weight: 600; width: 110px; flex-shrink: 0; }
+.eod-bar-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
+.eod-bar-fill  { height: 100%; border-radius: 5px; transition: width .4s ease; }
+.eod-quality-pct { font-size: 13px; font-weight: 700; width: 44px; text-align: right; flex-shrink: 0; }
+
+.eod-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.eod-table thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+.eod-table th { padding: 10px 14px; font-weight: 600; color: #475569; font-size: 12px; }
+.eod-table td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; }
+.eod-table tbody tr:hover { background: #f8fafc; }
+.eod-totals-row td { background: #f1f5f9; font-weight: 700; border-top: 2px solid #e2e8f0; }
+
+.eod-camp-pill {
+    display: inline-block; background: #eff6ff; color: #1d4ed8;
+    padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .eod-header { padding: 18px 16px; }
+    .eod-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .eod-btn span { display: none; }
+}

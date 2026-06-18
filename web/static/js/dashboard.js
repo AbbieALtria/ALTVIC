@@ -652,7 +652,6 @@ async function runEodReport() {
 
     const timeLabel = timeStart ? ` · ⏰ ${timeStart}${timeEnd?' – '+timeEnd:''}` : '';
 
-    _billingData = null; // reset cache for new report
     content.innerHTML = `<div class="loading-cell"><i class="fas fa-spinner fa-spin" style="font-size:28px"></i>
         <p style="margin-top:12px">Loading report for ${eodDateStr}${isAll?'':` — ${checked.length} campaigns`}${timeLabel}…</p></div>`;
     try {
@@ -663,142 +662,321 @@ async function runEodReport() {
     }
 }
 
+// Store last EOD data for exports
+let _eodReportData = null;
+
 function renderEODReport(r, container, selectedCamps=[], isAll=true) {
+    _eodReportData = r;
     const timeRangeLabel = r.time_range && r.time_range !== 'All Day'
-        ? `<span style="background:#f0f0ff;color:#6366f1;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-left:8px">⏰ ${esc(r.time_range)}</span>`
-        : '';
-    const filterLabel = (isAll
-        ? '<span style="color:#64748b;font-size:14px;font-weight:400">— All Campaigns</span>'
-        : `<span style="background:#eff6ff;color:#1d4ed8;font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px;margin-left:8px">${selectedCamps.length} campaigns selected</span>`)
-        + timeRangeLabel;
+        ? `<span class="eod-badge" style="background:#f0f0ff;color:#6366f1">⏰ ${esc(r.time_range)}</span>`
+        : `<span class="eod-badge" style="background:#f0fdf4;color:#16a34a">All Day</span>`;
+    const campLabel = isAll
+        ? `<span class="eod-badge" style="background:#f8fafc;color:#64748b">All Campaigns</span>`
+        : `<span class="eod-badge" style="background:#eff6ff;color:#1d4ed8">${selectedCamps.length} campaigns</span>`;
+
     const totalMins = r.total_minutes || 0;
-    const cards = [
-        {title:'Total Calls',   val:fmt(r.total_calls),  color:'#0f172a'},
-        {title:'Valid Calls',   val:fmt(r.valid_calls),  color:'#0f172a', sub:`${r.ghost_pct}% ghost`},
-        {title:'Answered',      val:fmt(r.answered),     color:'#22c55e', sub:`${r.answer_rate}%`},
-        {title:'Abandoned',     val:fmt(r.abandoned),    color:'#ef4444', sub:`${r.abandon_rate}%`},
-        {title:'Total Minutes', val:`${Math.floor(totalMins).toLocaleString()}`,
-         color:'#6366f1', sub:`${r.total_talk_fmt || ''} talk time`, icon:'⏱️'},
-    ];
-    let html = `<div style="margin-bottom:24px"><h3 style="margin-bottom:16px;color:#0f172a">📊 ${r.date} ${filterLabel}</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px">`;
+    const ansRate   = r.answer_rate  || 0;
+    const abdRate   = r.abandon_rate || 0;
 
-    cards.forEach(c => { html += `
-        <div style="background:#f8fafc;border-radius:12px;padding:20px;text-align:center">
-            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">${c.title}</div>
-            <div style="font-size:34px;font-weight:800;color:${c.color};margin:6px 0">${c.val}</div>
-            ${c.sub ? `<div style="font-size:13px;color:${c.color}">${c.sub}</div>` : ''}
-        </div>`; });
-    html += `</div>`;
+    // ── Header ──────────────────────────────────────────────────────────────
+    let html = `
+    <div class="eod-report-wrap">
+      <!-- Title bar -->
+      <div class="eod-header">
+        <div>
+          <div class="eod-title">📊 End of Day Report</div>
+          <div class="eod-meta">${esc(r.date)} &nbsp;•&nbsp; ${campLabel} &nbsp;•&nbsp; ${timeRangeLabel}</div>
+        </div>
+        <div class="eod-actions">
+          <button class="eod-btn eod-btn-outline" onclick="exportEodCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+          <button class="eod-btn eod-btn-primary" onclick="exportEodPDF()"><i class="fas fa-file-pdf"></i> PDF Report</button>
+        </div>
+      </div>
 
-    // Campaigns table — calls + emails side by side
+      <!-- KPI Cards -->
+      <div class="eod-kpi-grid">
+        <div class="eod-kpi">
+          <div class="eod-kpi-label">Total Calls</div>
+          <div class="eod-kpi-val" style="color:#0f172a">${fmt(r.total_calls)}</div>
+          <div class="eod-kpi-sub" style="color:#64748b">${fmt(r.valid_calls)} valid &nbsp;·&nbsp; ${r.ghost_pct}% ghost</div>
+        </div>
+        <div class="eod-kpi">
+          <div class="eod-kpi-label">Answered</div>
+          <div class="eod-kpi-val" style="color:#22c55e">${fmt(r.answered)}</div>
+          <div class="eod-kpi-sub" style="color:#22c55e">${ansRate}% answer rate</div>
+        </div>
+        <div class="eod-kpi">
+          <div class="eod-kpi-label">Abandoned</div>
+          <div class="eod-kpi-val" style="color:#ef4444">${fmt(r.abandoned)}</div>
+          <div class="eod-kpi-sub" style="color:#ef4444">${abdRate}% abandon rate</div>
+        </div>
+        <div class="eod-kpi">
+          <div class="eod-kpi-label">Talk Time</div>
+          <div class="eod-kpi-val" style="color:#6366f1">${r.total_talk_fmt || '0:00:00'}</div>
+          <div class="eod-kpi-sub" style="color:#6366f1">${Math.floor(totalMins).toLocaleString()} min total</div>
+        </div>
+        <div class="eod-kpi">
+          <div class="eod-kpi-label">Agents Active</div>
+          <div class="eod-kpi-val" style="color:#f59e0b">${(r.agents||[]).length}</div>
+          <div class="eod-kpi-sub" style="color:#64748b">handled calls</div>
+        </div>
+      </div>`;
+
+    // ── Answer vs Abandon visual bar ─────────────────────────────────────────
+    const ghostPct = r.ghost_pct || 0;
+    const validPct = 100 - ghostPct;
+    html += `
+      <div class="eod-section">
+        <div class="eod-section-title">Call Quality Overview</div>
+        <div class="eod-quality-row">
+          <div class="eod-quality-item">
+            <div class="eod-quality-label"><span style="color:#22c55e">●</span> Answered</div>
+            <div class="eod-bar-track"><div class="eod-bar-fill" style="width:${ansRate}%;background:#22c55e"></div></div>
+            <div class="eod-quality-pct">${ansRate}%</div>
+          </div>
+          <div class="eod-quality-item">
+            <div class="eod-quality-label"><span style="color:#ef4444">●</span> Abandoned</div>
+            <div class="eod-bar-track"><div class="eod-bar-fill" style="width:${abdRate}%;background:#ef4444"></div></div>
+            <div class="eod-quality-pct">${abdRate}%</div>
+          </div>
+          <div class="eod-quality-item">
+            <div class="eod-quality-label"><span style="color:#64748b">●</span> Valid calls</div>
+            <div class="eod-bar-track"><div class="eod-bar-fill" style="width:${validPct}%;background:#94a3b8"></div></div>
+            <div class="eod-quality-pct">${validPct.toFixed(1)}%</div>
+          </div>
+        </div>
+      </div>`;
+
+    // ── Campaign Breakdown ───────────────────────────────────────────────────
     if (r.campaigns?.length) {
-        const hasEmail = r.campaigns.some(c => c.email);
-        html += `<h3 style="margin-bottom:12px">Campaign Breakdown</h3>
+        html += `
+      <div class="eod-section">
+        <div class="eod-section-title">Campaign Breakdown
+          <span style="font-size:12px;font-weight:400;color:#94a3b8;margin-left:8px">${r.campaigns.length} campaign${r.campaigns.length>1?'s':''}</span>
+        </div>
         <div style="overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0">
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead>
-            <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0">
-                <th style="padding:10px 16px;text-align:left;font-weight:600;color:#475569" rowspan="2">Campaign</th>
-                <th colspan="5" style="padding:8px 16px;text-align:center;font-weight:700;color:#3b82f6;border-left:2px solid #e2e8f0;border-right:${hasEmail?'1px':'2px'} solid #e2e8f0">
-                    📞 Calls</th>
-                ${hasEmail ? `<th colspan="5" style="padding:8px 16px;text-align:center;font-weight:700;color:#a855f7;border-right:2px solid #e2e8f0">📧 Emails</th>` : ''}
+        <table class="eod-table">
+          <thead>
+            <tr>
+              <th style="text-align:left">#</th>
+              <th style="text-align:left">Campaign</th>
+              <th>Total</th>
+              <th>Valid</th>
+              <th>Answered</th>
+              <th>Abandoned</th>
+              <th>Ans %</th>
+              <th>Abd %</th>
+              <th>Avg Talk</th>
+              <th>Minutes</th>
             </tr>
-            <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px;border-left:2px solid #e2e8f0">Total</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Valid</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Ans %</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Abd %</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Avg Talk</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#6366f1;font-size:12px;border-right:${hasEmail?'1px':'2px'} solid #e2e8f0">⏱ Minutes</th>
-                ${hasEmail ? `
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Emails</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Cancels</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Refunds</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px">Refund $</th>
-                <th style="padding:8px 16px;text-align:right;font-weight:600;color:#475569;font-size:12px;border-right:2px solid #e2e8f0">Agents</th>` : ''}
-            </tr>
-        </thead><tbody>`;
+          </thead>
+          <tbody>`;
 
-        r.campaigns.forEach(c => {
-            const em = c.email;
-            const emailCells = hasEmail ? (em ? `
-                <td style="padding:12px 16px;text-align:right;font-weight:600;color:#a855f7">${fmt(em.total)}</td>
-                <td style="padding:12px 16px;text-align:right;color:${em.cancels>0?'#ef4444':'#64748b'}">${em.cancels}</td>
-                <td style="padding:12px 16px;text-align:right;color:${(em.full_ref+em.part_ref)>0?'#f97316':'#64748b'}">${em.full_ref+em.part_ref}</td>
-                <td style="padding:12px 16px;text-align:right;color:${em.refund_val>0?'#22c55e':'#64748b'}">$${em.refund_val.toFixed(2)}</td>
-                <td style="padding:12px 16px;text-align:right;color:#64748b;border-right:2px solid #e2e8f0">${em.agents}</td>` :
-                `<td colspan="5" style="padding:12px 16px;text-align:center;color:#cbd5e1;font-size:12px;border-right:2px solid #e2e8f0">no emails</td>`)
-                : '';
-            html += `<tr style="border-bottom:1px solid #f1f5f9">
-                <td style="padding:12px 16px;font-weight:600">${esc(c.campaign)}</td>
-                <td style="padding:12px 16px;text-align:right;border-left:2px solid #f1f5f9">${fmt(c.calls)}</td>
-                <td style="padding:12px 16px;text-align:right">${fmt(c.valid)}</td>
-                <td style="padding:12px 16px;text-align:right;color:${c.answer_rate>=80?'#22c55e':c.answer_rate>=60?'#f59e0b':'#ef4444'};font-weight:600">${c.answer_rate}%</td>
-                <td style="padding:12px 16px;text-align:right;color:${c.abandon_rate>20?'#ef4444':c.abandon_rate>10?'#f59e0b':'#64748b'}">${c.abandon_rate}%</td>
-                <td style="padding:12px 16px;text-align:right">${c.avg_talk}</td>
-                <td style="padding:12px 16px;text-align:right;font-weight:700;color:#6366f1">${c.minutes ? c.minutes.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1}) : '0'}</td>
-                ${emailCells}
+        let totCalls=0,totValid=0,totAns=0,totAbd=0,totMins=0;
+        r.campaigns.forEach((c,i) => {
+            totCalls+=c.calls; totValid+=c.valid; totAns+=c.answered; totAbd+=c.abandoned; totMins+=c.minutes||0;
+            const ansColor = c.answer_rate>=80?'#22c55e':c.answer_rate>=60?'#f59e0b':'#ef4444';
+            const abdColor = c.abandon_rate>20?'#ef4444':c.abandon_rate>10?'#f59e0b':'#64748b';
+            html += `<tr>
+              <td style="color:#94a3b8;font-size:12px">${i+1}</td>
+              <td><span class="eod-camp-pill">${esc(c.campaign)}</span></td>
+              <td style="text-align:right;font-weight:600">${fmt(c.calls)}</td>
+              <td style="text-align:right">${fmt(c.valid)}</td>
+              <td style="text-align:right;color:#22c55e;font-weight:600">${fmt(c.answered)}</td>
+              <td style="text-align:right;color:#ef4444">${fmt(c.abandoned)}</td>
+              <td style="text-align:right;font-weight:700;color:${ansColor}">${c.answer_rate}%</td>
+              <td style="text-align:right;color:${abdColor}">${c.abandon_rate}%</td>
+              <td style="text-align:right;color:#64748b">${c.avg_talk}</td>
+              <td style="text-align:right;font-weight:700;color:#6366f1">${(c.minutes||0).toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
             </tr>`;
         });
-        html += `</tbody></table></div>`;
+        // Totals row
+        const totAnsRate = totValid>0?((totAns/totValid)*100).toFixed(1):0;
+        const totAbdRate = totValid>0?((totAbd/totValid)*100).toFixed(1):0;
+        html += `<tr class="eod-totals-row">
+              <td colspan="2">TOTAL</td>
+              <td style="text-align:right">${fmt(totCalls)}</td>
+              <td style="text-align:right">${fmt(totValid)}</td>
+              <td style="text-align:right;color:#22c55e">${fmt(totAns)}</td>
+              <td style="text-align:right;color:#ef4444">${fmt(totAbd)}</td>
+              <td style="text-align:right">${totAnsRate}%</td>
+              <td style="text-align:right">${totAbdRate}%</td>
+              <td></td>
+              <td style="text-align:right;color:#6366f1">${totMins.toLocaleString(undefined,{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
+            </tr>`;
+        html += `</tbody></table></div></div>`;
     }
 
-    // ── Billing minutes summary ──────────────────────────────────────────────
-    html += `<div id="billingSection" style="margin-top:28px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-            <h3 style="margin:0">⏱️ Billing Minutes Summary</h3>
-            <div style="display:flex;gap:8px;">
-                <button onclick="loadBillingReport('today')" class="bill-tab active" style="padding:5px 14px;border-radius:8px;border:1px solid #6366f1;background:#6366f1;color:white;font-size:12px;font-weight:600;cursor:pointer;">Today</button>
-                <button onclick="loadBillingReport('week')"  class="bill-tab" style="padding:5px 14px;border-radius:8px;border:1px solid #e2e8f0;background:white;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;">7 Days</button>
-                <button onclick="loadBillingReport('month')" class="bill-tab" style="padding:5px 14px;border-radius:8px;border:1px solid #e2e8f0;background:white;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;">This Month</button>
-                <button onclick="loadBillingReport('last_month')" class="bill-tab" style="padding:5px 14px;border-radius:8px;border:1px solid #e2e8f0;background:white;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;">Last Month</button>
-            </div>
+    // ── Agent Leaderboard ────────────────────────────────────────────────────
+    if (r.agents?.length) {
+        html += `
+      <div class="eod-section">
+        <div class="eod-section-title">Agent Performance
+          <span style="font-size:12px;font-weight:400;color:#94a3b8;margin-left:8px">top ${r.agents.length}</span>
         </div>
-        <div id="billingContent"><div style="text-align:center;padding:30px;color:#94a3b8"><i class="fas fa-spinner fa-spin"></i> Loading billing data…</div></div>
-    </div>`;
+        <div style="overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0">
+        <table class="eod-table">
+          <thead><tr>
+            <th style="text-align:left">#</th>
+            <th style="text-align:left">Agent</th>
+            <th style="text-align:left">Username</th>
+            <th>Calls</th>
+            <th>Talk Time</th>
+          </tr></thead>
+          <tbody>`;
+        const maxCalls = Math.max(...r.agents.map(a=>a.calls),1);
+        r.agents.forEach((a,i) => {
+            const pct = Math.round((a.calls/maxCalls)*100);
+            const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+            html += `<tr>
+              <td style="color:#94a3b8;font-size:12px">${medal||i+1}</td>
+              <td style="font-weight:600">${esc(a.name)}</td>
+              <td style="color:#64748b;font-size:12px">${esc(a.user)}</td>
+              <td style="text-align:right">
+                <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+                  <div style="width:80px;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden">
+                    <div style="width:${pct}%;height:100%;background:#6366f1;border-radius:3px"></div>
+                  </div>
+                  <span style="font-weight:600;min-width:28px;text-align:right">${a.calls}</span>
+                </div>
+              </td>
+              <td style="text-align:right;color:#64748b">${a.talk_time}</td>
+            </tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+    }
 
-    // Trigger billing load after render
-    setTimeout(() => loadBillingReport('today', campParam), 100);
-
-    // Email channel section
+    // ── Email Channel (if present) ───────────────────────────────────────────
     if (r.email?.summary && r.email.summary.total_emails > 0) {
         const es = r.email.summary;
-        html += `<h3 style="margin:28px 0 12px">📧 Email Channel</h3>
+        html += `
+      <div class="eod-section">
+        <div class="eod-section-title">📧 Email Channel</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">`;
         [['Total Emails',es.total_emails,'#3b82f6'],['Cancellations',es.cancellations,'#ef4444'],
          ['Full Refunds',es.full_refunds,'#f97316'],['Partial Refunds',es.partial_refunds,'#f59e0b'],
          ['Refund Value','$'+es.refund_total.toFixed(2),'#22c55e'],
          ['Order Status',es.order_status,'#06b6d4'],['Gen Inquiry',es.gen_inquiry,'#a855f7']
-        ].forEach(([l,v,c]) => { html += `<div style="background:#f8fafc;padding:14px 18px;border-radius:10px;text-align:center;min-width:110px">
-            <div style="font-size:11px;color:#64748b;font-weight:600">${l}</div>
-            <div style="font-size:24px;font-weight:800;color:${c};margin-top:4px">${v}</div></div>`; });
+        ].forEach(([l,v,c]) => { html += `<div class="eod-kpi" style="min-width:110px">
+            <div class="eod-kpi-label">${l}</div>
+            <div class="eod-kpi-val" style="color:${c};font-size:28px">${v}</div></div>`; });
         html += `</div>`;
-
         if (r.email.agents?.length) {
             html += `<div style="overflow-x:auto;border-radius:10px;border:1px solid #e2e8f0">
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead style="background:#f8fafc"><tr>
-                <th style="padding:10px 16px;text-align:left">Agent</th>
-                <th style="padding:10px 16px;text-align:left">VICIdial</th>
-                <th style="padding:10px 16px;text-align:right">Emails</th>
-                <th style="padding:10px 16px;text-align:right">Cancels</th>
-                <th style="padding:10px 16px;text-align:right">Refunds</th>
-                <th style="padding:10px 16px;text-align:right">Refund $</th>
+            <table class="eod-table"><thead><tr>
+                <th style="text-align:left">Agent</th><th style="text-align:left">VICIdial</th>
+                <th>Emails</th><th>Cancels</th><th>Refunds</th><th>Refund $</th>
             </tr></thead><tbody>`;
-            r.email.agents.slice(0,15).forEach(a => { html += `<tr style="border-bottom:1px solid #f1f5f9">
-                <td style="padding:10px 16px;font-weight:600">${esc(a.pinktools_name)}</td>
-                <td style="padding:10px 16px;color:${a.altria_username?'#22c55e':'#f59e0b'}">${a.altria_username||'⚠ Unlinked'}</td>
-                <td style="padding:10px 16px;text-align:right">${a.total_emails}</td>
-                <td style="padding:10px 16px;text-align:right">${a.cancellations}</td>
-                <td style="padding:10px 16px;text-align:right">${a.refund_count}</td>
-                <td style="padding:10px 16px;text-align:right">$${a.refund_total.toFixed(2)}</td>
+            r.email.agents.slice(0,15).forEach(a => { html += `<tr>
+                <td style="font-weight:600">${esc(a.pinktools_name)}</td>
+                <td style="color:${a.altria_username?'#22c55e':'#f59e0b'}">${a.altria_username||'⚠ Unlinked'}</td>
+                <td style="text-align:right">${a.total_emails}</td>
+                <td style="text-align:right">${a.cancellations}</td>
+                <td style="text-align:right">${a.refund_count}</td>
+                <td style="text-align:right">$${a.refund_total.toFixed(2)}</td>
             </tr>`; });
             html += `</tbody></table></div>`;
         }
+        html += `</div>`;
     }
-    html += `</div>`;
+
+    html += `</div>`; // eod-report-wrap
     container.innerHTML = html;
+}
+
+// ── EOD Export ────────────────────────────────────────────
+function exportEodCSV() {
+    const r = _eodReportData;
+    if (!r) return;
+    const rows = [
+        ['EOD Report', r.date, r.time_range],
+        [],
+        ['SUMMARY'],
+        ['Total Calls', r.total_calls],
+        ['Valid Calls', r.valid_calls],
+        ['Ghost %', r.ghost_pct + '%'],
+        ['Answered', r.answered],
+        ['Answer Rate', r.answer_rate + '%'],
+        ['Abandoned', r.abandoned],
+        ['Abandon Rate', r.abandon_rate + '%'],
+        ['Total Talk Time', r.total_talk_fmt],
+        ['Total Minutes', r.total_minutes],
+        [],
+        ['CAMPAIGN BREAKDOWN'],
+        ['#','Campaign','Total','Valid','Answered','Abandoned','Ans %','Abd %','Avg Talk','Minutes'],
+        ...(r.campaigns||[]).map((c,i) => [i+1,c.campaign,c.calls,c.valid,c.answered,c.abandoned,c.answer_rate+'%',c.abandon_rate+'%',c.avg_talk,(c.minutes||0).toFixed(1)]),
+        [],
+        ['AGENT PERFORMANCE'],
+        ['#','Agent','Username','Calls','Talk Time'],
+        ...(r.agents||[]).map((a,i) => [i+1,a.name,a.user,a.calls,a.talk_time]),
+    ];
+    const csv = rows.map(row => row.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `EOD_Report_${r.date}.csv`; a.click();
+}
+
+function exportEodPDF() {
+    const r = _eodReportData;
+    if (!r) return;
+    const win = window.open('', '_blank');
+    const camps = (r.campaigns||[]).map((c,i) => `
+        <tr>
+          <td>${i+1}</td><td><b>${c.campaign}</b></td>
+          <td>${c.calls}</td><td>${c.valid}</td>
+          <td style="color:#16a34a"><b>${c.answered}</b></td>
+          <td style="color:#dc2626">${c.abandoned}</td>
+          <td style="color:${c.answer_rate>=80?'#16a34a':c.answer_rate>=60?'#d97706':'#dc2626'}"><b>${c.answer_rate}%</b></td>
+          <td>${c.abandon_rate}%</td>
+          <td>${c.avg_talk}</td>
+          <td><b>${(c.minutes||0).toFixed(1)}</b></td>
+        </tr>`).join('');
+    const agents = (r.agents||[]).map((a,i) => `
+        <tr>
+          <td>${i+1}</td><td><b>${a.name}</b></td><td>${a.user}</td>
+          <td><b>${a.calls}</b></td><td>${a.talk_time}</td>
+        </tr>`).join('');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>EOD Report ${r.date}</title>
+    <style>
+      body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;margin:0;padding:32px;background:#fff}
+      .hdr{background:linear-gradient(135deg,#6366f1,#3b82f6);color:white;padding:28px 32px;border-radius:12px;margin-bottom:28px}
+      .hdr h1{margin:0 0 6px;font-size:24px} .hdr p{margin:0;opacity:.85;font-size:14px}
+      .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px}
+      .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center}
+      .kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#64748b}
+      .kpi-val{font-size:28px;font-weight:800;margin:6px 0}
+      .kpi-sub{font-size:12px}
+      h2{font-size:15px;font-weight:700;color:#1e293b;margin:24px 0 10px;border-bottom:2px solid #e2e8f0;padding-bottom:6px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th{background:#f8fafc;padding:8px 12px;text-align:right;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0}
+      th:first-child,th:nth-child(2){text-align:left}
+      td{padding:8px 12px;text-align:right;border-bottom:1px solid #f1f5f9}
+      td:first-child,td:nth-child(2){text-align:left}
+      .totals td{background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0}
+      @media print{body{padding:16px}.hdr{border-radius:0}}
+    </style></head><body>
+    <div class="hdr">
+      <h1>📊 End of Day Report</h1>
+      <p>${r.date} &nbsp;·&nbsp; ${r.time_range||'All Day'}</p>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Total Calls</div><div class="kpi-val">${r.total_calls}</div><div class="kpi-sub" style="color:#64748b">${r.valid_calls} valid</div></div>
+      <div class="kpi"><div class="kpi-label">Answered</div><div class="kpi-val" style="color:#16a34a">${r.answered}</div><div class="kpi-sub" style="color:#16a34a">${r.answer_rate}%</div></div>
+      <div class="kpi"><div class="kpi-label">Abandoned</div><div class="kpi-val" style="color:#dc2626">${r.abandoned}</div><div class="kpi-sub" style="color:#dc2626">${r.abandon_rate}%</div></div>
+      <div class="kpi"><div class="kpi-label">Talk Time</div><div class="kpi-val" style="color:#6366f1;font-size:20px">${r.total_talk_fmt}</div><div class="kpi-sub" style="color:#6366f1">${Math.floor(r.total_minutes||0)} min</div></div>
+      <div class="kpi"><div class="kpi-label">Agents Active</div><div class="kpi-val" style="color:#d97706">${(r.agents||[]).length}</div></div>
+    </div>
+    <h2>Campaign Breakdown</h2>
+    <table><thead><tr><th>#</th><th>Campaign</th><th>Total</th><th>Valid</th><th>Answered</th><th>Abandoned</th><th>Ans %</th><th>Abd %</th><th>Avg Talk</th><th>Minutes</th></tr></thead>
+    <tbody>${camps}</tbody></table>
+    ${agents ? `<h2>Agent Performance</h2>
+    <table><thead><tr><th>#</th><th>Agent</th><th>Username</th><th>Calls</th><th>Talk Time</th></tr></thead>
+    <tbody>${agents}</tbody></table>` : ''}
+    <p style="margin-top:40px;font-size:11px;color:#94a3b8;text-align:center">Generated by Altria Ops &nbsp;·&nbsp; ${new Date().toLocaleString()}</p>
+    </body></html>`);
+    win.document.close();
+    setTimeout(() => win.print(), 600);
 }
 
 // ── Alerts ────────────────────────────────────────────────
